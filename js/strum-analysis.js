@@ -16,7 +16,7 @@ function computeChromaClassic(fd, sampleRate, fftSize) {
         const a = fd[k - 1], c = fd[k + 1], den = a - 2 * b + c;
         const f = (k + (den ? 0.5 * (a - c) / den : 0)) * binHz;
         const mag = Math.pow(10, b / 20);
-        const pc = ((Math.round(69 + 12 * Math.log2(f / 440)) % 12) + 12) % 12;
+        const pc = ((Math.round(69 + 12 * Math.log2(f / refA)) % 12) + 12) % 12;
         chroma[pc] += mag;
         if (f < 200 && mag > bass.m) { bass.m = mag; bass.pc = pc; }
     }
@@ -104,6 +104,7 @@ function rankByChroma(chroma, bassPc) {
     if (!(mx > 0)) return [];
     const obs = Array.from(chroma, v => v / mx), no = Math.hypot(...obs), res = [];
     for (const key in chordDatabase) {
+        if (chordDatabase[key].ext) continue;   // kamus lanjutan tidak ikut deteksi (menjaga akurasi)
         const c = chordDatabase[key], t = new Array(12).fill(0);
         const rr = noteStrings.indexOf(c.root), has = d => c.notes.includes(noteStrings[(rr + d) % 12]);
         const minor3 = has(3) && !has(4), major3 = has(4) && !has(3);

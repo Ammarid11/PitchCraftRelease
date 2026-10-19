@@ -105,7 +105,7 @@ function updatePitch() {
 
         let medianPitch = getMedian(pitchHistory);
         let note = noteFromPitch(medianPitch);
-        const exact = 69 + 12 * Math.log2(medianPitch / 440);
+        const exact = 69 + 12 * Math.log2(medianPitch / refA);
         if (shownMidi !== null && Math.abs(exact - shownMidi) * 100 <= S.hyst) { note = shownMidi; candMidi = null; }   // histeresis: nada tidak pindah hanya karena melewati batas 50 cent
         else if (shownMidi === null) shownMidi = note;
         else {
@@ -118,7 +118,7 @@ function updatePitch() {
         noteEl.innerHTML = noteName + '<span class="oct">' + octave + '</span>';
         noteEl.classList.add('active-note');
         hzEl.textContent = `${medianPitch.toFixed(1)} Hz`; window.pcHz = medianPitch; window.pcT = performance.now();
-        const cents = 1200 * Math.log2(medianPitch / (440 * Math.pow(2, (note - 69) / 12)));
+        const cents = 1200 * Math.log2(medianPitch / (refA * Math.pow(2, (note - 69) / 12)));
         const cm = document.getElementById('centsMark'), ok = Math.abs(cents) <= 5;
         cm.style.left = (50 + Math.max(-50, Math.min(50, cents))).toFixed(1) + '%';
         cm.style.background = ok ? 'var(--success)' : 'var(--warning)';

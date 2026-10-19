@@ -42,6 +42,7 @@ function rankChords() {
     const res = [];
     for (const key in chordDatabase) {
         const c = chordDatabase[key];
+        if (c.ext) continue;   // kamus lanjutan tidak ikut pencocokan otomatis
         const match = c.notes.filter(n => set.includes(n)).length;
         const extra = set.length - match, missing = c.notes.length - match;
         if (match < 2 || extra > 2) continue;
@@ -62,7 +63,9 @@ function showChordKey(key) {
 function pickManual() {
     learnable = false;
     currentCandidates = [];
-    showChordKey(document.getElementById('rootSel').value + document.getElementById('qualSel').value);
+    const key = document.getElementById('rootSel').value + document.getElementById('qualSel').value;
+    if (!chordDatabase[key]) { alert('Bentuk ' + key + ' belum ada di kamus.'); return; }
+    showChordKey(key);
 }
 
 function clearNotes() {
@@ -73,7 +76,10 @@ function clearNotes() {
 
 function initPicker() {
     document.getElementById('rootSel').innerHTML = noteStrings.map(n => `<option value="${n}">${n}${FLAT[n] ? "/" + FLAT[n] : ""}</option>`).join('');
-    document.getElementById('qualSel').innerHTML = QUALITIES.map(q => `<option value="${q.k}">${q.n}</option>`).join('');
+    const opt = q => `<option value="${q.k}">${q.n}</option>`;
+    document.getElementById('qualSel').innerHTML = QUALITIES.filter(q => !q.ext).map(opt).join('') +
+        `<optgroup label="Kamus lanjutan">${QUALITIES.filter(q => q.ext).map(opt).join('')}</optgroup>` +
+        `<optgroup label="Slash chord (tidak semua akar ada)">${SLASH_SUFFIXES.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`;
     try { exemplars = JSON.parse(localStorage.getItem('pc_ex') || '{}'); } catch (e) { exemplars = {}; }
     try { savedChordsList = JSON.parse(localStorage.getItem('pc_saved') || '[]'); } catch (e) { savedChordsList = []; }
     renderSavedChords();
@@ -117,13 +123,15 @@ function switchVariant(direction) {
 }
 
 function generateHorizontalFretboardHTML(fingeringArray) {
+    fingeringArray = adaptFingering(fingeringArray);
     const pos = fingeringArray.filter(f => f > 0);
     const minFret = pos.length ? Math.min(...pos) : 1, maxFret = pos.length ? Math.max(...pos) : 1;
     const startFret = maxFret <= 5 ? 1 : minFret;
-    const stringNames = ['E', 'A', 'D', 'G', 'B', 'e'];
+    const fn = analyzeFingers(fingeringArray).fing;
+    const stringNames = tuningInfo().t.map((m, i) => i === 5 ? noteStrings[m % 12].toLowerCase() : noteStrings[m % 12]);
     let h = `<div class="fretboard-box-h"><div class="fretboard-h-grid"><div></div>`;
     for (let i = 0; i < 5; i++) h += `<div class="h-fret-header">${startFret + i}</div>`;
-    for (let s = 0; s < 6; s++) {
+    for (let s = 5; s >= 0; s--) {   // senar 1 (e kecil) di atas, seperti tab
         const f = fingeringArray[s];
         const mark = f === 0 ? 'o' : (f === -1 ? 'x' : '');
         const col = f === 0 ? 'var(--success)' : (f === -1 ? '#ef4444' : 'var(--text-muted)');
@@ -131,7 +139,7 @@ function generateHorizontalFretboardHTML(fingeringArray) {
         for (let i = 0; i < 5; i++) {
             const cur = startFret + i;
             const cls = (i === 0 && startFret === 1) ? 'h-fret-col-1' : '';
-            h += `<div class="h-fret-cell ${cls}">${f === cur ? `<div class="finger-dot-h">${cur}</div>` : ''}</div>`;
+            h += `<div class="h-fret-cell ${cls}">${f === cur ? `<div class="finger-dot-h">${fn[s] || cur}</div>` : ''}</div>`;
         }
     }
     return h + `</div></div>`;
@@ -140,7 +148,7 @@ function generateHorizontalFretboardHTML(fingeringArray) {
 function displayChordInfo(chord, variantIdx, elementId) {
     const resultBox = document.getElementById(elementId);
     const variant = chord.variants[variantIdx];
-    const fretboardMarkup = generateHorizontalFretboardHTML(variant.fingering);
+    const fretboardMarkup = fretboardHTML(variant.fingering);
     if (elementId !== 'chordResultBox') return fretboardMarkup;
 
     let variantButtonsHTML = '';
@@ -163,6 +171,7 @@ function displayChordInfo(chord, variantIdx, elementId) {
         ${learnable && lastConf ? confBadgeHTML(lastConf) : ''}
         <div class="chord-detail-row">Nada Pembentuk: <strong>${chord.notes.join(' - ')}</strong></div>
         <div class="chord-detail-row">Posisi Jari: <strong>${variant.desc}</strong></div>
+        ${tuneNoteHTML()}
         <div style="text-align: center;">${fretboardMarkup}</div>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Keterangan: <span style="color:var(--success);">o</span> = Open string, <span style="color:#ef4444;">x</span> = Senar mati</div>
         ${learnable ? `<div class="alt-row"><button class="btn-variant" onclick="learnCurrent()">✓ Benar, ingat pola ini</button><span>Salah? Pilih akor yang benar di "Kemungkinan lain" agar dipelajari.</span></div>` : ''}
@@ -204,7 +213,7 @@ function renderSavedChords() {
     }
 
     container.innerHTML = savedChordsList.map((savedItem, idx) => {
-        let miniFretHTML = generateHorizontalFretboardHTML(savedItem.variant.fingering);
+        let miniFretHTML = fretboardHTML(savedItem.variant.fingering);
         return `
                     <div class="saved-item-card">
                         <div class="saved-item-left">
@@ -224,14 +233,61 @@ function renderSavedChords() {
 
 function transposeChord(d) {
     if (!currentDetectedChordObj) return;
-    const c = currentDetectedChordObj, q = c.key.slice(c.root.length);
-    const nr = noteStrings[(noteStrings.indexOf(c.root) + d + 12) % 12];
+    const nk = tKey(currentDetectedChordObj.key, d);
+    if (!chordDatabase[nk]) { alert('Bentuk ' + nk + ' belum ada di kamus.'); return; }
     currentCandidates = [];
-    showChordKey(nr + q);
+    showChordKey(nk);
 }
 
 function copySaved() {
     if (!savedChordsList.length) { alert('Belum ada akor tersimpan.'); return; }
-    const txt = savedChordsList.map(c => `${c.name} (${c.variant.desc}): ${c.variant.fingering.map(v => v === -1 ? 'x' : v).join(' ')}`).join('\n');
+    const txt = savedChordsList.map(c => `${c.name} (${c.variant.desc}): ${adaptFingering(c.variant.fingering).map(v => v === -1 ? 'x' : v).join(' ')}`).join('\n');
     (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => alert('Daftar disalin!'), () => prompt('Salin manual:', txt));
+}
+
+/* --- Nomor jari (1-4), deteksi barre, dan diagram vertikal --- */
+let diagramMode = 'h';
+const fretboardHTML = f => diagramMode === 'v' ? generateVerticalDiagramHTML(f) : generateHorizontalFretboardHTML(f);
+function toggleDiagram() { diagramMode = diagramMode === 'v' ? 'h' : 'v'; refreshChordViews(); saveSettings(); }
+
+// Barre dipakai jika akor butuh lebih dari 4 jari (atau barre kecil F): jari 1 menutup semua senar di fret terendah.
+// Sisanya diberi nomor 2-4 (atau 1-4 tanpa barre) menurut urutan fret lalu senar.
+function analyzeFingers(f) {
+    const pos = f.filter(v => v > 0), fing = f.map(() => 0);
+    if (!pos.length) return { fing, barre: null };
+    const m = Math.min(...pos), at = f.map((v, i) => v === m ? i : -1).filter(i => i >= 0);
+    let barre = null, next = 1;
+    if (at.length >= 2 && (pos.length > 4 || (m === 1 && at.includes(5)))) {   // >4 jari, atau barre kecil fret 1 di senar atas (F)
+        const a = at[0], b = at[at.length - 1]; let clear = true;
+        for (let i = a; i <= b; i++) if (f[i] < m) clear = false;   // senar mati/terbuka di antaranya = bukan barre
+        if (clear) { barre = { fret: m, from: a, to: b }; for (let i = a; i <= b; i++) fing[i] = 1; next = 2; }
+    }
+    f.map((v, i) => ({ v, i })).filter(o => o.v > 0 && !fing[o.i]).sort((x, y) => x.v - y.v || x.i - y.i)
+        .forEach(o => { fing[o.i] = Math.min(4, next++); });
+    return { fing, barre };
+}
+
+function generateVerticalDiagramHTML(f0) {
+    const f = adaptFingering(f0), { fing, barre } = analyzeFingers(f), pos = f.filter(v => v > 0);
+    const minF = pos.length ? Math.min(...pos) : 1, maxF = pos.length ? Math.max(...pos) : 1, start = maxF <= 5 ? 1 : minF;
+    const x0 = 30, dx = 20, y0 = 34, dy = 24, lefty = document.body.classList.contains('lefty');
+    const sx = s => x0 + (lefty ? 5 - s : s) * dx;
+    const names = tuningInfo().t.map((m, i) => i === 5 ? noteStrings[m % 12].toLowerCase() : noteStrings[m % 12]);
+    let g = '';
+    for (let i = 0; i <= 5; i++) g += `<line x1="${x0}" y1="${y0 + i * dy}" x2="${x0 + 5 * dx}" y2="${y0 + i * dy}" stroke="#475069" stroke-width="${i === 0 && start === 1 ? 5 : 1.5}"/>`;
+    for (let s = 0; s < 6; s++) {
+        g += `<line x1="${sx(s)}" y1="${y0}" x2="${sx(s)}" y2="${y0 + 5 * dy}" stroke="#475069" stroke-width="1.5"/><text x="${sx(s)}" y="${y0 + 5 * dy + 14}" font-size="9" fill="#8391a7" text-anchor="middle">${names[s]}</text>`;
+        if (f[s] === -1) g += `<text x="${sx(s)}" y="${y0 - 9}" font-size="13" fill="#ef4444" text-anchor="middle">×</text>`;
+        else if (f[s] === 0) g += `<circle cx="${sx(s)}" cy="${y0 - 13}" r="4" fill="none" stroke="#10b981" stroke-width="1.5"/>`;
+    }
+    if (start > 1) g += `<text x="${x0 - 8}" y="${y0 + dy / 2 + 4}" font-size="11" fill="#8391a7" text-anchor="end">${start}</text>`;
+    if (barre && barre.fret - start >= 0 && barre.fret - start < 5) {
+        const xa = Math.min(sx(barre.from), sx(barre.to)), xb = Math.max(sx(barre.from), sx(barre.to));
+        g += `<rect x="${xa - 7}" y="${y0 + (barre.fret - start) * dy + 4}" width="${xb - xa + 14}" height="${dy - 8}" rx="8" fill="#8b5cf6"/>`;
+    }
+    f.forEach((v, s) => {
+        const r = v - start; if (v <= 0 || r < 0 || r > 4) return;
+        g += `<circle cx="${sx(s)}" cy="${y0 + r * dy + dy / 2}" r="8" fill="#8b5cf6"/><text x="${sx(s)}" y="${y0 + r * dy + dy / 2 + 3.5}" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${fing[s] || v}</text>`;
+    });
+    return `<div class="fretboard-box-h"><svg viewBox="0 0 160 ${y0 + 5 * dy + 22}" width="160" role="img" aria-label="Diagram akor">${g}</svg></div>`;
 }

@@ -11,7 +11,7 @@ Mikrofon butuh HTTPS atau localhost (di file lokal sebagian browser memblokirnya
   - `pitch.js` pendeteksi pitch · `gate.js` penyaring suara & kestabilan · `audio.js` suara akor & metronom
   - `tuner.js` tuner mikrofon · `chords-ui.js` analisis & tampilan akor · `progression.js` progresi
   - `strum-analysis.js` / `strum-mode.js` Mode Strum · `tabs.js` menu · `tuning.js` tuner senar
-  - `key-capo.js` kunci & capo · `strum-pattern.js` pola strum · `practice.js` latihan & rekam · `init.js` inisialisasi
+  - `key-capo.js` kunci & capo (panel melayang di samping / lembar bawah di HP) · `chord-library.js` Kamus Akor lengkap · `strum-pattern.js` pola strum · `practice.js` latihan & rekam · `song.js` lagu (tab Lagu) · `settings.js` penyimpanan pengaturan · `init.js` inisialisasi
 
 ## Tes deteksi akor
 `node tests/chord-detection.test.js` — mensintesis genjrengan (harmonik, derau, senar tipis lemah) untuk 12 nada dasar,

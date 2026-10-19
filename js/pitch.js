@@ -1,7 +1,7 @@
 /* Pitchcraft — Pendeteksi pitch (YIN) untuk mode petik satu senar. */
 
 function noteFromPitch(frequency) {
-    const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+    const noteNum = 12 * (Math.log(frequency / refA) / Math.log(2));
     return Math.round(noteNum) + 69;
 }
 

@@ -30,3 +30,12 @@ function allowSleep() { try { if (wakeLock) wakeLock.release(); } catch (e) { } 
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && (isListening || isStrum) && !wakeLock) keepAwake();
 });
+
+// Utilitas bersama: capo aktif & transpose nama akor (dipakai progresi, lagu, audio, latihan)
+function getCapo() { const e = document.getElementById('capoSel'); return e ? (+e.value || 0) : 0; }
+const FLAT_TO_SHARP = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+function tNote(n, d) { n = FLAT_TO_SHARP[n] || n; const i = noteStrings.indexOf(n); return i < 0 ? n : noteStrings[(i + d + 12) % 12]; }
+function tKey(k, d) { return String(k).replace(/[A-G][#b]?/g, n => tNote(n, d)); }
+
+// Kalibrasi nada acuan A (Hz); dipakai tuner, deteksi nada, dan suara
+let refA = 440;

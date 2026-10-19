@@ -898,3 +898,220 @@ body {
     border-color: var(--danger);
     background: rgba(239,68,68,.14);
 }
+
+/* ===== Lagu, durasi akor, lirik ber-akor ===== */
+.picker-row input[type=text], .song-in {
+    flex: 1 1 160px;
+    min-width: 0;
+    min-height: 44px;
+    background: rgba(0,0,0,.3);
+    color: var(--text-main);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: .85rem;
+}
+
+.song-sec {
+    border: 1px solid var(--surface-border);
+    background: var(--surface-2);
+    border-radius: 14px;
+    padding: .9rem;
+    margin-bottom: 12px;
+}
+
+.song-ta {
+    width: 100%;
+    margin-top: 8px;
+    background: rgba(0,0,0,.3);
+    color: var(--text-main);
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-family: inherit;
+    font-size: .85rem;
+    resize: vertical;
+}
+
+.beat-sel {
+    background: rgba(0,0,0,.3);
+    color: var(--text-main);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .72rem;
+    padding: 2px 4px;
+}
+
+.badge small {
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: .7rem;
+}
+
+.lyr {
+    margin-top: 10px;
+    overflow-x: auto;
+}
+
+.lyr-line {
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 1.4em;
+    margin: 2px 0;
+}
+
+.seg {
+    display: inline-flex;
+    flex-direction: column;
+    white-space: pre;
+}
+
+.seg b {
+    color: #c4b5fd;
+    font-size: .8rem;
+    min-height: 1.1em;
+}
+
+.seg i {
+    font-style: normal;
+    font-size: .9rem;
+}
+
+/* ===== v2: tampilan lebih rapi, ramah Android, Kamus akor ===== */
+html { overscroll-behavior-y: none; }
+body {
+    overscroll-behavior-y: contain;
+    -webkit-font-smoothing: antialiased;
+    background:
+        radial-gradient(820px 380px at 50% -8%, rgba(139,92,246,.22), transparent),
+        radial-gradient(520px 320px at 105% 45%, rgba(99,102,241,.09), transparent),
+        var(--bg);
+}
+select, input, textarea { color-scheme: dark; }
+select option { background: #131622; color: var(--text-main); }
+h1 { background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.logo-mark { box-shadow: 0 8px 22px -6px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,.25); }
+
+.card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,.035), transparent 140px), var(--surface);
+}
+.card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; pointer-events: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: linear-gradient(90deg, transparent, var(--primary), transparent); opacity: .5;
+}
+.card.on[data-tab] { animation: cardIn .22s ease-out both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.btn-primary {
+    background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff;
+    min-height: 54px; font-size: 1rem; border-radius: 14px;
+    box-shadow: 0 12px 26px -12px var(--primary-glow);
+}
+.btn-primary.active { background: var(--danger); box-shadow: 0 12px 26px -12px rgba(239,68,68,.5); }
+.btn-secondary { border-radius: 14px; min-height: 50px; }
+.note-display { font-size: 5rem; min-height: 5rem; }
+.chord-info-box { background: linear-gradient(180deg, rgba(139,92,246,.07), transparent); }
+.detected-list, .chord-info-box, .saved-item-card, .song-sec { border-radius: 16px; }
+
+/* tab bawah: indikator aktif, muat 7 menu di layar kecil */
+.tabbar { gap: 0; padding-left: 4px; padding-right: 4px; border-radius: 18px 18px 0 0; box-shadow: 0 -10px 30px -12px rgba(0,0,0,.6); }
+.tabbar button { position: relative; max-width: none; min-width: 0; font-size: .62rem; letter-spacing: .1px; padding: 6px 0; white-space: nowrap; }
+.tabbar button span { font-size: 1.2rem; }
+.tabbar button.on { background: transparent; }
+.tabbar button.on::after { content: ""; position: absolute; top: -6px; left: 50%; width: 26px; height: 3px; margin-left: -13px; border-radius: 0 0 3px 3px; background: var(--primary); box-shadow: 0 0 10px var(--primary); }
+@media (min-width: 521px) { .tabbar button { font-size: .72rem; } .tabbar { max-width: 720px; margin: 0 auto; } }
+
+/* Kamus akor */
+.lib-search { width: 100%; flex: none; -webkit-appearance: none; appearance: none; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 6px; margin-top: 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+    flex: 0 0 auto; min-width: 46px; min-height: 42px; padding: 4px 14px; border-radius: 999px;
+    background: rgba(255,255,255,.05); color: var(--text-main); border: 1px solid var(--surface-border);
+    font-size: .88rem; line-height: 1.1;
+}
+.chip small { display: block; font-size: .6rem; font-weight: 500; color: var(--text-muted); }
+.chip.on { background: rgba(139,92,246,.3); border-color: var(--primary); color: #fff; }
+.chip.on small { color: #ddd6fe; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; margin-top: 8px; }
+.lib-card { background: var(--surface-2); border: 1px solid var(--surface-border); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lib-top { display: flex; flex-direction: column; line-height: 1.2; }
+.lib-top strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; color: #c4b5fd; }
+.lib-top small, .lib-notes { font-size: .7rem; color: var(--text-muted); }
+.lib-dia { cursor: pointer; text-align: center; }
+.lib-dia .fretboard-box-h { display: block; padding: 6px 4px; margin-top: 0; }
+.lib-dia svg { width: 100%; max-width: 150px; height: auto; }
+.lib-var { display: flex; align-items: center; gap: 4px; font-size: .68rem; color: var(--text-muted); }
+.lib-var span { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-var button, .lib-act button { min-height: 38px; padding: 4px 10px; border-radius: 10px; background: rgba(255,255,255,.06); color: var(--text-main); border: 1px solid var(--surface-border); font-size: .8rem; }
+.lib-var button { min-width: 38px; font-size: 1.1rem; }
+.lib-act { display: flex; gap: 6px; }
+.lib-act button { flex: 1; }
+.lib-act button:hover, .lib-var button:hover, .chip:hover { border-color: var(--primary); }
+
+.toast {
+    position: fixed; left: 50%; bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px)); z-index: 80;
+    transform: translate(-50%, 10px); max-width: 90vw; padding: 10px 16px; border-radius: 999px;
+    background: #1f2335; color: #fff; border: 1px solid var(--primary); font-size: .85rem;
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
+}
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (pointer: coarse) {
+    input[type=search], input[type=text], textarea { font-size: 16px !important; }
+    .btn-variant, .chip { -webkit-user-select: none; user-select: none; }
+}
+@media (max-width: 360px) { .lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } .note-display { font-size: 3.6rem; } }
+
+/* ===== Panel melayang Kunci & Capo ===== */
+.topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.keypill {
+    margin-left: auto; min-height: 40px; padding: 6px 14px; border-radius: 999px; font-size: .8rem;
+    background: rgba(139,92,246,.18); color: #ddd6fe; border: 1px solid var(--primary);
+}
+.keypanel {
+    position: fixed; z-index: 60; left: 0; right: 0; bottom: 0; max-width: 720px; margin: 0 auto;
+    max-height: 78dvh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--surface); border: 1px solid var(--surface-border); border-radius: 20px 20px 0 0;
+    padding: .7rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -20px 50px -10px rgba(0,0,0,.75);
+    transform: translateY(105%); visibility: hidden; transition: transform .25s ease, visibility .25s;
+}
+.keypanel.open { transform: none; visibility: visible; }
+.kp-back { position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,.55); opacity: 0; pointer-events: none; transition: opacity .25s; }
+.kp-back.open { opacity: 1; pointer-events: auto; }
+.kp-grab { width: 40px; height: 4px; border-radius: 2px; background: var(--surface-border); margin: 0 auto 8px; }
+.kp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: .8rem; }
+.kp-head strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.05rem; }
+.kp-sum { font-size: .78rem; color: var(--text-muted); }
+.kp-x { min-width: 44px; padding: 0; font-size: 1.3rem; background: rgba(255,255,255,.06); color: var(--text-main); border: 1px solid var(--surface-border); border-radius: 12px; }
+.keypanel .picker-row select { flex: 1 1 90px; }
+.keypanel .chgrid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.keypanel .chgrid button { min-height: 52px; font-size: .85rem; padding: 6px 2px; }
+.keypanel .picker-row .btn-variant { flex: 1 1 auto; }
+
+@media (min-width: 1280px) {
+    .keypanel {
+        left: auto; right: calc((100vw - 720px) / 2 - 276px); top: 5.5rem; bottom: auto; width: 260px; max-width: none; margin: 0;
+        max-height: calc(100dvh - 7rem); border-radius: 20px; padding: 1rem;
+        transform: none; visibility: visible; box-shadow: 0 20px 40px -20px rgba(0,0,0,.6);
+    }
+    .kp-back, .keypill, .kp-grab { display: none; }
+    .keypanel.min .kp-body { display: none; }
+    .keypanel.min .kp-head { margin-bottom: 0; }
+}
+
+/* Draf kunci/capo: tombol Terapkan */
+.kp-note { display: none; margin-top: 10px; font-size: .76rem; color: #fcd34d; }
+.keypanel.dirty .kp-note { display: block; }
+.kp-actions { display: flex; gap: 8px; margin-top: 10px; }
+.kp-actions .btn-primary { flex: 1; margin-top: 0; min-height: 46px; font-size: .92rem; }
+.kp-actions .btn-variant { min-height: 46px; padding: 0 16px; }
+.keypanel button:disabled { opacity: .4; cursor: default; box-shadow: none; }
+.keypanel.dirty #kpApply { animation: kpPulse 1.6s ease-in-out infinite; }
+@keyframes kpPulse { 50% { box-shadow: 0 0 0 4px rgba(139,92,246,.35); } }
+.chgrid.stale { opacity: .35; pointer-events: none; }

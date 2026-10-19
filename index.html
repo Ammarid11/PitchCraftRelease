@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#090a0f">
     <meta name="color-scheme" content="dark">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Pitchcraft — Ultimate Guitar Chord Master</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +25,7 @@
                 <h1>Ultimate Guitar Chord Master</h1>
             </div>
         </div>
+        <button id="keyPill" class="keypill" onclick="kpToggle(true)" aria-haspopup="dialog">🎼 Kunci C · tanpa capo</button>
     </header>
 
     <main class="container">
@@ -71,7 +74,8 @@
                 <select id="rootSel" aria-label="Nada dasar"></select>
                 <select id="qualSel" aria-label="Jenis akor"></select>
                 <button class="btn-variant" onclick="pickManual()">Tampilkan</button>
-                <button class="btn-variant" onclick="document.body.classList.toggle('lefty')">🤚 Mode Kidal</button>
+                <button class="btn-variant" onclick="toggleLefty()">🤚 Mode Kidal</button>
+                <button class="btn-variant" onclick="toggleDiagram()">↔ Diagram Vertikal</button>
             </div>
 
             <div class="field-row">
@@ -107,13 +111,15 @@
             <button class="btn-secondary" onclick="addToProgression()" style="width:100%">➕ Tambah Akor Saat Ini</button>
             <div id="progList" class="detected-list" style="margin-top:10px"><span class="empty-list">Belum ada progresi.</span></div>
             <div class="picker-row" style="margin-top:12px">
-                <input id="bpm" type="number" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span>
-                <label><input type="checkbox" id="metroChk" checked> Metronom</label>
+                <input id="bpm" data-sync="bpm" type="number" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span>
+                <label><input type="checkbox" id="metroChk" data-sync="metro" checked> Metronom</label>
+                <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label>
                 <button class="btn-variant" onclick="playProgression()">▶ Putar</button>
                 <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
                 <button class="btn-variant" onclick="progression=[];renderProgression()">Kosongkan</button>
             </div>
-            <div class="picker-row" style="margin-top:12px"><label>Pola strum <select id="patSel" onchange="strumPatSel=this.value;renderPat()"></select></label></div>
+            <div class="picker-row" style="margin-top:12px"><label>Pola strum <select id="patSel" onchange="strumPatSel=this.value;renderPat()"></select></label>
+                <label>Birama <select id="progMeter" data-sync="meter" onchange="setMeter(this.value)"><option>4/4</option><option>3/4</option><option>6/8</option></select></label></div>
             <div id="patView" class="hz-display" style="text-align:left;letter-spacing:4px"></div>
             <div class="picker-row" style="margin-top:8px"><label><input type="checkbox" id="autoRec"> Rekam otomatis dari Mode Strum</label>
                 <button class="btn-variant" onclick="shareProg()">📤 Bagikan / Salin</button></div>
@@ -134,38 +140,91 @@
         </section>
         <section class="card tuner" data-tab="tuning">
             <div class="card-head"><h2>Tuner Senar</h2><p>Pilih tuning, petik satu senar; aplikasi menunjukkan senar mana dan arah putar pasaknya.</p></div>
-            <div class="picker-row"><select id="tunSel" onchange="renderTuning()" aria-label="Tuning"></select></div>
+            <div class="picker-row"><select id="tunSel" onchange="onTuningChange()" aria-label="Tuning"></select></div>
             <div id="tunStrings" class="detected-list" style="margin-top:10px;justify-content:center"></div>
+            <div id="tunWarn" class="chord-detail-row" style="margin-top:8px;font-size:.78rem"></div>
+            <div class="picker-row" style="margin-top:10px"><button class="btn-variant" onclick="playRefAll()">🔊 Bunyikan semua</button>
+                <label>Kalibrasi A= <select id="refSel" onchange="setRefA(this.value)"></select></label>
+                <label><input type="checkbox" id="vibChk" checked> Getar saat pas</label></div>
+            <div class="chord-detail-row" style="font-size:.78rem;margin-top:6px">Ketuk senar di atas untuk membunyikan nada acuan.</div>
             <div id="tunNote" class="note-display" style="margin-top:1rem">—</div>
             <div id="tunMsg" class="hz-display">Tekan mulai lalu petik senar.</div>
             <div class="cents-meter"><div class="c"></div><div id="tunMark" class="cents-mark"></div></div>
             <div class="cents-scale"><span>−50</span><span>0</span><span>+50</span></div>
             <button id="tunBtn" class="btn-primary" onclick="toggleListening()">Mulai Mendengarkan</button>
         </section>
-        <section class="card" data-tab="kunci">
-            <div class="card-head"><h2>Kunci Lagu &amp; Capo</h2><p>Pilih kunci untuk melihat akor yang cocok, lalu atur capo untuk mendapat bentuk jari yang lebih mudah.</p></div>
-            <div class="picker-row"><select id="keyRoot" onchange="renderKey()" aria-label="Kunci"></select>
-                <select id="keyMode" onchange="renderKey()" aria-label="Mode"><option value="maj">Mayor</option><option value="min">Minor</option></select>
-                <label>Capo <select id="capoSel" onchange="renderKey()"></select></label></div>
-            <div id="keyChords" class="chgrid" style="margin-top:12px"></div>
-            <div id="keyMsg" class="chord-detail-row" style="margin-top:10px"></div>
-            <div class="field-label" style="margin:1rem 0 .5rem">Progresi populer (masuk ke tab Progresi)</div>
-            <div id="keyProgs" class="picker-row"></div>
-            <div id="capoBest" class="chord-detail-row" style="margin-top:12px"></div>
-        </section>
         <section class="card" data-tab="latih">
-            <div class="card-head"><h2>Latihan &amp; Kuis</h2><p>Genjreng akor yang diminta; Mode Strum mengecek jawabanmu. Waktu 60 detik.</p></div>
-            <div class="picker-row"><select id="drillMode"><option value="drill">Pindah akor (dari Progresi)</option><option value="quiz">Kuis akor acak (dari Kunci)</option></select>
+            <div class="card-head"><h2>Latihan &amp; Kuis</h2><p>Genjreng akor yang diminta; Mode Strum mengecek jawabanmu. Pilih tingkat dan durasi sesi (30/60/120 detik).</p></div>
+            <div class="picker-row"><select id="drillMode"><option value="drill">Pindah akor (dari Progresi)</option><option value="quiz">Kuis akor acak (dari Kunci)</option><option value="level">Kuis menurut tingkat</option></select>
+                <select id="drillLevel" aria-label="Tingkat"><option value="dasar">Dasar (akor terbuka)</option><option value="barre">Barre</option><option value="seventh">7th &amp; sus</option></select>
+                <select id="drillDur" aria-label="Durasi"><option value="30">30 dtk</option><option value="60" selected>60 dtk</option><option value="120">120 dtk</option></select>
                 <button class="btn-variant" onclick="drillStart()">▶ Mulai</button><button class="btn-variant" onclick="drillStop()">■ Stop</button></div>
             <div id="drillTarget" class="note-display" style="text-align:center;margin-top:1rem">—</div>
             <div id="drillInfo" class="hz-display" style="text-align:center">Pilih mode lalu tekan Mulai.</div>
+            <div id="drillHist" class="chord-detail-row" style="margin-top:12px;font-size:.8rem"></div>
+            <button class="btn-variant" onclick="clearHist()" style="margin-top:8px">🗑 Hapus riwayat</button>
+        </section>
+        <section class="card" data-tab="lagu">
+            <div class="card-head"><h2>Lagu</h2><p>Susun bagian lagu (bait, reff), akor berdurasi tiap bagian, dan lirik dengan akor di atasnya. Tersimpan otomatis di browser ini.</p></div>
+            <div class="picker-row"><input id="songName" type="text" class="song-in" placeholder="Judul lagu" maxlength="80" aria-label="Judul lagu" onchange="song.name=this.value.slice(0,80)">
+                <label>Birama <select data-sync="meter" onchange="setMeter(this.value)"><option>4/4</option><option>3/4</option><option>6/8</option></select></label></div>
+            <div class="picker-row" style="margin-top:8px"><input type="number" data-sync="bpm" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span>
+                <label><input type="checkbox" data-sync="metro" checked> Metronom</label>
+                <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label></div>
+            <div class="picker-row" style="margin-top:8px">
+                <button class="btn-variant" onclick="songPlay()">▶ Putar</button>
+                <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
+                <button class="btn-variant" onclick="songTranspose(-1)">♭ −1</button>
+                <button class="btn-variant" onclick="songTranspose(1)">♯ +1</button>
+                <button class="btn-variant" onclick="songAddSection()">➕ Bagian</button></div>
+            <div class="picker-row" style="margin-top:8px">
+                <button class="btn-variant" onclick="songExport()">⬇ Ekspor .json</button>
+                <button class="btn-variant" onclick="document.getElementById('songFile').click()">⬆ Impor .json</button>
+                <input type="file" id="songFile" accept=".json,application/json" hidden onchange="songImport(this)"></div>
+            <div class="chord-detail-row" style="margin-top:10px;font-size:.78rem">Pola strum diatur di tab Progresi. Tulis lirik dengan akor di dalam kurung siku, mis. [Am]kata [G]kata.</div>
+            <div id="songView" style="margin-top:12px"></div>
+        </section>
+        <section class="card" data-tab="kamus">
+            <div class="card-head"><h2>Kamus Akor Lengkap</h2><p>Semua akor gitar untuk tiap nada dasar. Pilih nada, saring jenisnya, atau cari nama akor. Ketuk gambar untuk membuka detail.</p></div>
+            <input id="libSearch" type="search" class="song-in lib-search" placeholder="Cari akor, mis. F#m7, sus4, C/G" autocomplete="off" aria-label="Cari akor" oninput="libSearch(this.value)">
+            <div id="libRoots" class="chips" role="group" aria-label="Nada dasar"></div>
+            <div id="libCats" class="chips" role="group" aria-label="Jenis akor"></div>
+            <div id="libCount" class="chord-detail-row" style="margin-top:6px"></div>
+            <div id="libGrid" class="lib-grid"></div>
         </section>
     </main>
+    <div id="kpBack" class="kp-back" onclick="kpToggle(false)"></div>
+    <aside id="keyPanel" class="keypanel" aria-label="Kunci dan capo">
+        <div class="kp-grab" id="kpGrab"></div>
+        <div class="kp-head">
+            <div><strong>Kunci &amp; Capo</strong><div id="kpSum" class="kp-sum"></div></div>
+            <button id="kpBtn" class="kp-x" onclick="kpToggle()" aria-label="Tutup">×</button>
+        </div>
+        <div class="kp-body">
+            <div hidden>
+                <select id="keyRoot" aria-hidden="true" tabindex="-1"></select>
+                <select id="keyMode" aria-hidden="true" tabindex="-1"><option value="maj">Mayor</option><option value="min">Minor</option></select>
+                <select id="capoSel" aria-hidden="true" tabindex="-1"></select>
+            </div>
+            <div class="picker-row"><select id="kpRoot" onchange="kpDirty()" aria-label="Kunci"></select>
+                <select id="kpMode" onchange="kpDirty()" aria-label="Mode"><option value="maj">Mayor</option><option value="min">Minor</option></select>
+                <label>Capo <select id="kpCapo" onchange="kpDirty()"></select></label></div>
+            <div id="kpNote" class="kp-note">Belum diterapkan. Tekan Terapkan agar akor dan capo berubah.</div>
+            <div class="kp-actions"><button id="kpApply" class="btn-primary" onclick="kpApply()" disabled>Terapkan</button>
+                <button id="kpCancel" class="btn-variant" onclick="kpCancel()" disabled>Batal</button></div>
+            <div id="keyChords" class="chgrid" style="margin-top:12px"></div>
+            <div class="field-label" style="margin:1rem 0 .5rem">Progresi populer</div>
+            <div id="keyProgs" class="picker-row"></div>
+            <div id="capoBest" class="chord-detail-row" style="margin-top:12px"></div>
+        </div>
+    </aside>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <nav class="tabbar" id="tabbar">
         <button data-go="deteksi" class="on"><span>🎸</span>Deteksi</button>
         <button data-go="tuning"><span>🎚</span>Tuning</button>
-        <button data-go="kunci"><span>🎼</span>Kunci</button>
+        <button data-go="kamus"><span>📚</span>Kamus</button>
         <button data-go="latih"><span>🏋</span>Latih</button>
+        <button data-go="lagu"><span>🎵</span>Lagu</button>
         <button data-go="progresi"><span>📋</span>Progresi</button>
     </nav>
 
@@ -184,6 +243,9 @@
     <script src="js/key-capo.js"></script>
     <script src="js/strum-pattern.js"></script>
     <script src="js/practice.js"></script>
+    <script src="js/chord-library.js"></script>
+    <script src="js/song.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/init.js"></script>
 
 </body>
