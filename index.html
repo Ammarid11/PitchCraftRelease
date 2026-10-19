@@ -434,7 +434,7 @@ function noteFromPitch(frequency) {
             for (let i = off; i < buffer.length; i++) rms += buffer[i] * buffer[i];
             rms = Math.sqrt(rms / (buffer.length - off));
             lastRms = rms; lastClarity = 1;
-            if (rms < 0.004) return -1;
+            if (rms < 0.0015) return -1;
 
             const y = new Float32Array(maxTau + 1);
             for (let tau = 1; tau <= maxTau; tau++) {
@@ -487,24 +487,25 @@ function noteFromPitch(frequency) {
         // ===== Penyaring suara bukan-gitar (ucapan, kipas, suara jauh) =====
         // Sensitivitas: gate = volume minimum, clar = batas kejernihan periodik (YIN), stab = toleransi goyangan nada (cent)
         const SENS = {
-            rendah: { gate: 0.020, clar: 0.06, stab: 20 },
-            normal: { gate: 0.012, clar: 0.09, stab: 25 },
-            tinggi: { gate: 0.008, clar: 0.12, stab: 35 }
+            rendah: { gate: 0.010, clar: 0.10, stab: 25 },
+            normal: { gate: 0.005, clar: 0.15, stab: 40 },
+            tinggi: { gate: 0.0025, clar: 0.20, stab: 55 }
         };
-        let sensLevel = 'normal', lastRms = 0, lastClarity = 1, noiseRms = 0, stabHist = [];
+        let sensLevel = 'normal', lastRms = 0, lastClarity = 1, gateReason = '', stabHist = [];
         const STAB_FRAMES = 6;
         function setSens(v) { if (SENS[v]) { sensLevel = v; resetGate(); try { localStorage.setItem('pc_sens', v); } catch (e) {} } }
-        function resetGate() { noiseRms = 0; stabHist = []; }
+        function resetGate() { stabHist = []; gateReason = ''; }
         function gatePitch(f) {
             const S = SENS[sensLevel];
-            // lantai noise = volume rata-rata frame yang TIDAK periodik (kipas, desis, ucapan); frame nada jernih tidak ikut menaikkannya
-            if (lastClarity > S.clar) noiseRms = 0.97 * noiseRms + 0.03 * lastRms;
-            if (f < 0 || lastRms < Math.max(S.gate, 2 * noiseRms) || lastClarity > S.clar) { stabHist = []; return -1; }
+            gateReason = '';
+            if (lastRms < S.gate) { stabHist = []; gateReason = lastRms < 0.0015 ? '' : 'terlalu pelan (' + lastRms.toFixed(3) + ')'; return -1; }
+            if (f < 0 || lastClarity > S.clar) { stabHist = []; gateReason = 'nada tidak jernih (' + lastClarity.toFixed(2) + ' > ' + S.clar + ')'; return -1; }
             stabHist.push(12 * Math.log2(f / 440));
             if (stabHist.length > STAB_FRAMES) stabHist.shift();
             if (stabHist.length < STAB_FRAMES) return -1;
-            const spread = Math.max.apply(null, stabHist) - Math.min.apply(null, stabHist);
-            return spread * 100 <= S.stab ? f : -1;                                   // nada gitar stabil; suara orang meluncur/bergetar
+            const spread = (Math.max.apply(null, stabHist) - Math.min.apply(null, stabHist)) * 100;
+            if (spread > S.stab) { gateReason = 'nada belum stabil (±' + spread.toFixed(0) + ' cent)'; return -1; }   // suara orang meluncur/bergetar
+            return f;
         }
 
         async function toggleListening() {
@@ -621,7 +622,7 @@ function noteFromPitch(frequency) {
                 stableNoteCandidate = "";
                 noteEl.textContent = "—";
                 noteEl.classList.remove('active-note');
-                hzEl.textContent = "Petik senar gitar...";
+                hzEl.textContent = gateReason ? ("Ditolak: " + gateReason) : "Petik senar gitar...";
                 document.getElementById('centsMark').style.left = '50%';
                 document.getElementById('centsMark').style.background = 'var(--text-muted)';
                 document.getElementById('centsText').innerHTML = '&nbsp;';
