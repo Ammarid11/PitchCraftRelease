@@ -213,6 +213,13 @@
             <div id="centsText" class="hz-display">&nbsp;</div>
             <button id="toggleBtn" class="btn-primary" onclick="toggleListening()">Mulai Mendengarkan</button>
             <button id="strumBtn" class="btn-secondary" style="width:100%;margin-top:.6rem" onclick="toggleStrum()">🎸 Mode Strum (Genjrengan)</button>
+            <div class="algo-row">Sensitivitas nada:
+                <select id="sensSel" onchange="setSens(this.value)">
+                    <option value="rendah">Rendah (ruangan bising)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="tinggi">Tinggi (petikan pelan)</option>
+                </select>
+            </div>
             <div class="algo-row">Algoritma strum:
                 <select id="algoSel" onchange="strumAlgo=this.value">
                     <option value="klasik" selected>Klasik</option>
@@ -426,7 +433,8 @@ function noteFromPitch(frequency) {
             let rms = 0;
             for (let i = off; i < buffer.length; i++) rms += buffer[i] * buffer[i];
             rms = Math.sqrt(rms / (buffer.length - off));
-            if (rms < CONFIG.MIN_VOLUME) return -1;
+            lastRms = rms; lastClarity = 1;
+            if (rms < 0.004) return -1;
 
             const y = new Float32Array(maxTau + 1);
             for (let tau = 1; tau <= maxTau; tau++) {
@@ -459,6 +467,8 @@ function noteFromPitch(frequency) {
                 if (minVal < 0.25) tauFound = minTauIdx; else return -1;
             }
 
+            lastClarity = y[tauFound];   // makin kecil = makin periodik (senar gitar sangat periodik; suara & noise tidak)
+
             // koreksi oktaf: jika setengah periode juga nyaris sama bagusnya, itu nada dasarnya yang sebenarnya (frekuensi lebih tinggi)
             // (dibiarkan: YIN mengambil lembah pertama sehingga jarang salah oktaf)
 
@@ -471,6 +481,30 @@ function noteFromPitch(frequency) {
             const frequency = sampleRate / better;
             if (frequency < CONFIG.MIN_FREQ || frequency > CONFIG.MAX_FREQ) return -1;
             return frequency;
+        }
+
+
+        // ===== Penyaring suara bukan-gitar (ucapan, kipas, suara jauh) =====
+        // Sensitivitas: gate = volume minimum, clar = batas kejernihan periodik (YIN), stab = toleransi goyangan nada (cent)
+        const SENS = {
+            rendah: { gate: 0.020, clar: 0.06, stab: 20 },
+            normal: { gate: 0.012, clar: 0.09, stab: 25 },
+            tinggi: { gate: 0.008, clar: 0.12, stab: 35 }
+        };
+        let sensLevel = 'normal', lastRms = 0, lastClarity = 1, noiseRms = 0, stabHist = [];
+        const STAB_FRAMES = 6;
+        function setSens(v) { if (SENS[v]) { sensLevel = v; resetGate(); try { localStorage.setItem('pc_sens', v); } catch (e) {} } }
+        function resetGate() { noiseRms = 0; stabHist = []; }
+        function gatePitch(f) {
+            const S = SENS[sensLevel];
+            // lantai noise = volume rata-rata frame yang TIDAK periodik (kipas, desis, ucapan); frame nada jernih tidak ikut menaikkannya
+            if (lastClarity > S.clar) noiseRms = 0.97 * noiseRms + 0.03 * lastRms;
+            if (f < 0 || lastRms < Math.max(S.gate, 2 * noiseRms) || lastClarity > S.clar) { stabHist = []; return -1; }
+            stabHist.push(12 * Math.log2(f / 440));
+            if (stabHist.length > STAB_FRAMES) stabHist.shift();
+            if (stabHist.length < STAB_FRAMES) return -1;
+            const spread = Math.max.apply(null, stabHist) - Math.min.apply(null, stabHist);
+            return spread * 100 <= S.stab ? f : -1;                                   // nada gitar stabil; suara orang meluncur/bergetar
         }
 
         async function toggleListening() {
@@ -502,7 +536,7 @@ function noteFromPitch(frequency) {
                     biquadFilter.connect(lp);
                     lp.connect(analyser);
 
-                    isListening = true; keepAwake();
+                    isListening = true; keepAwake(); resetGate();
                     pitchHistory = [];
                     
                     btn.textContent = "Berhenti";
@@ -535,7 +569,7 @@ function noteFromPitch(frequency) {
         function updatePitch() {
             const buffer = new Float32Array(CONFIG.BUFFER_SIZE);
             analyser.getFloatTimeDomainData(buffer);
-            const rawPitch = detectPitch(buffer, audioContext.sampleRate);
+            const rawPitch = gatePitch(detectPitch(buffer, audioContext.sampleRate));
 
             const noteEl = document.getElementById('note');
             const hzEl = document.getElementById('hz');
@@ -1160,6 +1194,7 @@ function strumLoop() {
     }
     strumRaf = requestAnimationFrame(strumLoop);
 }
+try { const sv = localStorage.getItem('pc_sens'); if (sv && SENS[sv]) { sensLevel = sv; document.getElementById('sensSel').value = sv; } } catch (e) {}
 try { initPicker(); } catch (e) { console.error(e); if (window.pcShow) window.pcShow('Gagal memuat data akor: ' + e.message); }
     </script>
 </body>
