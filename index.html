@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#090a0f">
     <meta name="color-scheme" content="dark">
-    <meta name="mobile-web-app-capable" content="yes">
     <title>Pitchcraft — Ultimate Guitar Chord Master</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,9 +17,10 @@
         }
         *{box-sizing:border-box;margin:0;padding:0}
         html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-        html,body{max-width:100%;overflow-x:hidden}
+        html,body{max-width:100%}
+        @supports (overflow:clip){body{overflow-x:clip}}
         body{-webkit-tap-highlight-color:transparent}
-        button,select,input,label{touch-action:manipulation}
+        button{touch-action:manipulation}
         body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text-main);min-height:100vh;min-height:100dvh;line-height:1.5;
             background:radial-gradient(900px 420px at 50% -10%,rgba(139,92,246,.18),transparent),var(--bg);
             padding:calc(1.25rem + env(safe-area-inset-top,0px)) calc(1rem + env(safe-area-inset-right,0px)) calc(3rem + env(safe-area-inset-bottom,0px)) calc(1rem + env(safe-area-inset-left,0px))}
@@ -171,6 +171,19 @@
     </style>
 </head>
 <body>
+    <div id="pcBanner" style="display:none;position:sticky;top:0;z-index:99;background:#7f1d1d;color:#fff;padding:10px 14px;font:14px/1.4 system-ui,sans-serif;border-radius:10px;margin:0 auto 12px;max-width:720px"></div>
+    <noscript><div style="background:#7f1d1d;color:#fff;padding:12px;border-radius:10px;font:14px system-ui,sans-serif">JavaScript nonaktif atau diblokir di browser ini, jadi tombol tidak akan berfungsi. Aktifkan JavaScript, atau buka file ini di Chrome / Firefox / Samsung Internet (bukan lewat pratinjau file, WhatsApp, atau Google Drive).</div></noscript>
+    <script>
+    /* ES5 murni: tetap jalan di browser lama & menampilkan penyebab jika skrip utama gagal */
+    (function () {
+        function show(m) { var b = document.getElementById('pcBanner'); if (b) { b.style.display = 'block'; b.textContent = m; } }
+        window.pcShow = show;
+        window.onerror = function (msg, src, line) { show('Terjadi error di browser ini: ' + msg + (line ? ' (baris ' + line + ')' : '') + '. Coba perbarui browser, atau buka di Chrome / Firefox.'); };
+        try { new Function('async function f(){}; const a=()=>1; return `x`;'); }
+        catch (e) { show('Browser ini terlalu lama untuk aplikasi ini (tidak mendukung JavaScript modern). Perbarui browser atau buka di Chrome / Firefox terbaru.'); }
+        if (location.protocol === 'file:') { setTimeout(function () { var b = document.getElementById('pcBanner'); if (b && b.style.display === 'none' && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) show('Halaman dibuka dari file lokal; mikrofon mungkin diblokir. Buka lewat https:// untuk memakai tuner.'); }, 500); }
+    })();
+    </script>
     <header class="topbar">
         <div class="brand">
             <div class="logo-mark">♪</div>
@@ -282,10 +295,10 @@
     <script>
         const CONFIG = {
             HISTORY_LENGTH: 10,
-            MIN_VOLUME: 0.03,
+            MIN_VOLUME: 0.012,
             BUFFER_SIZE: 8192,
             MIN_FREQ: 75,
-            MAX_FREQ: 400
+            MAX_FREQ: 700
         };
 
         function micError(err) {
@@ -311,7 +324,7 @@ let audioContext = null;
         let isListening = false;
         let animationId = null;
         let pitchHistory = [];
-        let lastStablePitch = 0;
+        let lastStablePitch = 0, outlierCount = 0;
         
         let detectedNotesList = [];
         let stableNoteCandidate = "";
@@ -402,48 +415,59 @@ function noteFromPitch(frequency) {
         }
 
         function detectPitch(buffer, sampleRate) {
+            // YIN: jendela terbatas (hanya periode yang relevan untuk gitar) -> ~12x lebih ringan dari versi lama
+            const W = 2560;
+            const maxTau = Math.min(Math.floor(sampleRate / CONFIG.MIN_FREQ) + 2, buffer.length - W - 2);
+            const minTau = Math.max(2, Math.floor(sampleRate / CONFIG.MAX_FREQ));
+            const off = buffer.length - W - maxTau - 1;      // pakai sampel terbaru
+            if (off < 0) return -1;
+
             let rms = 0;
-            for (let i = 0; i < buffer.length; i++) rms += buffer[i] * buffer[i];
-            rms = Math.sqrt(rms / buffer.length);
+            for (let i = off; i < buffer.length; i++) rms += buffer[i] * buffer[i];
+            rms = Math.sqrt(rms / (buffer.length - off));
             if (rms < CONFIG.MIN_VOLUME) return -1;
 
-            let halfBufferSize = Math.floor(buffer.length / 2);
-            let yinBuffer = new Float32Array(halfBufferSize);
-            
-            for (let tau = 1; tau < halfBufferSize; tau++) {
-                for (let i = 0; i < halfBufferSize; i++) {
-                    let delta = buffer[i] - buffer[i + tau];
-                    yinBuffer[tau] += delta * delta;
+            const y = new Float32Array(maxTau + 1);
+            for (let tau = 1; tau <= maxTau; tau++) {
+                let sum = 0;
+                for (let i = 0; i < W; i++) {
+                    const d = buffer[off + i] - buffer[off + i + tau];
+                    sum += d * d;
                 }
+                y[tau] = sum;
+            }
+            y[0] = 1;
+            let run = 0;
+            for (let tau = 1; tau <= maxTau; tau++) {
+                run += y[tau];
+                y[tau] = y[tau] * tau / (run || 1);
             }
 
-            yinBuffer[0] = 1;
-            let runningSum = 0;
-            for (let tau = 1; tau < halfBufferSize; tau++) {
-                runningSum += yinBuffer[tau];
-                yinBuffer[tau] = yinBuffer[tau] * tau / (runningSum || 1);
-            }
-
-            let threshold = 0.12;
+            const THR = 0.15;
             let tauFound = -1;
-            for (let tau = 2; tau < halfBufferSize; tau++) {
-                if (yinBuffer[tau] < threshold) {
-                    while (tau + 1 < halfBufferSize && yinBuffer[tau + 1] < yinBuffer[tau]) tau++;
+            for (let tau = minTau; tau < maxTau; tau++) {
+                if (y[tau] < THR) {
+                    while (tau + 1 < maxTau && y[tau + 1] < y[tau]) tau++;
                     tauFound = tau;
                     break;
                 }
             }
-
             if (tauFound === -1) {
-                let minVal = Infinity, minTau = -1;
-                for (let tau = 2; tau < halfBufferSize; tau++) {
-                    if (yinBuffer[tau] < minVal) { minVal = yinBuffer[tau]; minTau = tau; }
-                }
-                if (minVal < 0.18) tauFound = minTau;
-                else return -1;
+                let minVal = Infinity, minTauIdx = -1;
+                for (let tau = minTau; tau < maxTau; tau++) if (y[tau] < minVal) { minVal = y[tau]; minTauIdx = tau; }
+                if (minVal < 0.25) tauFound = minTauIdx; else return -1;
             }
 
-            let frequency = sampleRate / tauFound;
+            // koreksi oktaf: jika setengah periode juga nyaris sama bagusnya, itu nada dasarnya yang sebenarnya (frekuensi lebih tinggi)
+            // (dibiarkan: YIN mengambil lembah pertama sehingga jarang salah oktaf)
+
+            // interpolasi parabola -> presisi sub-sampel (penting untuk senar tinggi)
+            let better = tauFound;
+            if (tauFound > 1 && tauFound < maxTau) {
+                const a = y[tauFound - 1], b = y[tauFound], c = y[tauFound + 1], den = a - 2 * b + c;
+                if (den !== 0) better = tauFound + 0.5 * (a - c) / den;
+            }
+            const frequency = sampleRate / better;
             if (frequency < CONFIG.MIN_FREQ || frequency > CONFIG.MAX_FREQ) return -1;
             return frequency;
         }
@@ -460,7 +484,7 @@ function noteFromPitch(frequency) {
                 try {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomic');
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
                     tunerStream = stream;
                     
                     microphone = audioContext.createMediaStreamSource(stream);
@@ -471,8 +495,11 @@ function noteFromPitch(frequency) {
                     analyser = audioContext.createAnalyser();
                     analyser.fftSize = CONFIG.BUFFER_SIZE;
                     
+                    const lp = audioContext.createBiquadFilter();
+                    lp.type = 'lowpass'; lp.frequency.setValueAtTime(1500, audioContext.currentTime);   // buang desis & harmonik tinggi
                     microphone.connect(biquadFilter);
-                    biquadFilter.connect(analyser);
+                    biquadFilter.connect(lp);
+                    lp.connect(analyser);
 
                     isListening = true; keepAwake();
                     pitchHistory = [];
@@ -513,6 +540,15 @@ function noteFromPitch(frequency) {
             const hzEl = document.getElementById('hz');
 
             if (rawPitch !== -1) {
+                if (pitchHistory.length >= 3) {
+                    const ref = getMedian(pitchHistory);
+                    if (Math.abs(12 * Math.log2(rawPitch / ref)) > 0.8) {      // loncatan > ~80 cent: kemungkinan glitch atau senar baru
+                        outlierCount++;
+                        if (outlierCount < 3) { if (isListening) animationId = requestAnimationFrame(updatePitch); return; }
+                        pitchHistory = []; stableNoteCount = 0;                // 3 frame berturut-turut -> memang nada baru
+                    }
+                }
+                outlierCount = 0;
                 pitchHistory.push(rawPitch);
                 if (pitchHistory.length > CONFIG.HISTORY_LENGTH) pitchHistory.shift();
 
@@ -1122,7 +1158,7 @@ function strumLoop() {
     }
     strumRaf = requestAnimationFrame(strumLoop);
 }
-initPicker();
+try { initPicker(); } catch (e) { console.error(e); if (window.pcShow) window.pcShow('Gagal memuat data akor: ' + e.message); }
     </script>
 </body>
 </html>
