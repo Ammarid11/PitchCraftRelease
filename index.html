@@ -9,182 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <style>
-        :root{
-            --bg:#090a0f;--surface:#131622;--surface-2:rgba(255,255,255,.03);--surface-border:rgba(255,255,255,.08);
-            --primary:#8b5cf6;--primary-glow:rgba(139,92,246,.3);--text-main:#f1f5f9;--text-muted:#8391a7;
-            --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--radius:20px;
-        }
-        *{box-sizing:border-box;margin:0;padding:0}
-        html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
-        html,body{max-width:100%}
-        @supports (overflow:clip){body{overflow-x:clip}}
-        body{-webkit-tap-highlight-color:transparent}
-        button{touch-action:manipulation}
-        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text-main);min-height:100vh;min-height:100dvh;line-height:1.5;
-            background:radial-gradient(900px 420px at 50% -10%,rgba(139,92,246,.18),transparent),var(--bg);
-            padding:calc(1.25rem + env(safe-area-inset-top,0px)) calc(1rem + env(safe-area-inset-right,0px)) calc(3rem + env(safe-area-inset-bottom,0px)) calc(1rem + env(safe-area-inset-left,0px))}
-        .topbar{max-width:720px;margin:0 auto 1.25rem}
-        .brand{display:flex;align-items:center;gap:12px}
-        .logo-mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;color:#fff;
-            background:linear-gradient(135deg,#8b5cf6,#6366f1);box-shadow:0 8px 20px -6px var(--primary-glow)}
-        .logo-tag{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);font-weight:600}
-        h1{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;line-height:1.2}
-        .container{width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:1.1rem}
-        .card{background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--radius);padding:1.4rem 1.25rem;
-            box-shadow:0 20px 40px -20px rgba(0,0,0,.6)}
-        .card-head{margin-bottom:1.1rem}
-        h2{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700}
-        .card-head p{font-size:.82rem;color:var(--text-muted);margin-top:2px}
-        .field-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:1.1rem 0 .5rem}
-        .field-label{font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;color:var(--text-muted)}
-        .field-row .btn-variant{margin:0}
-        .divider{height:1px;background:var(--surface-border);margin:1.2rem 0}
-
-        /* Tuner */
-        .tuner{text-align:center}
-        .status-indicator{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--surface-border);
-            padding:6px 14px;border-radius:100px;font-size:.8rem;color:var(--text-muted);margin-bottom:1rem}
-        .status-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted)}
-        .listening .status-dot{background:var(--success);box-shadow:0 0 8px var(--success);animation:pulse-dot 1.5s infinite}
-        @keyframes pulse-dot{0%{transform:scale(.95);opacity:.8}50%{transform:scale(1.3);opacity:1}100%{transform:scale(.95);opacity:.8}}
-        .note-display{font-family:'Space Grotesk',sans-serif;font-size:4.5rem;font-weight:700;line-height:1;min-height:4.5rem;transition:color .15s}
-        .note-display .oct{font-size:.42em;font-weight:600;margin-left:2px;opacity:.75;letter-spacing:0}
-        .note-display.active-note{color:var(--primary);text-shadow:0 0 30px var(--primary-glow)}
-        .hz-display{font-size:.88rem;color:var(--text-muted);margin-top:.35rem;min-height:1.3rem}
-        .cents-meter{position:relative;height:8px;border-radius:4px;margin:16px auto 4px;max-width:280px;
-            background:linear-gradient(90deg,rgba(245,158,11,.25),rgba(16,185,129,.35) 45%,rgba(16,185,129,.35) 55%,rgba(245,158,11,.25))}
-        .cents-meter .c{position:absolute;left:50%;top:-4px;width:2px;height:16px;background:var(--text-muted);transform:translateX(-50%)}
-        .cents-mark{position:absolute;top:-3px;width:10px;height:14px;border-radius:3px;background:var(--text-muted);left:50%;transform:translateX(-50%);transition:left .1s}
-        .cents-scale{display:flex;justify-content:space-between;max-width:280px;margin:0 auto;font-size:.68rem;color:var(--text-muted)}
-
-        /* Buttons */
-        button{font-family:inherit;font-size:.9rem;font-weight:600;border:none;border-radius:12px;cursor:pointer;
-            padding:.8rem 1.2rem;transition:opacity .15s,transform .1s,background .15s}
-        button:active{transform:scale(.98)}
-        button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-        .btn-primary{width:100%;background:var(--text-main);color:var(--bg);margin-top:1.1rem}
-        .btn-primary:hover{opacity:.9}
-        .btn-primary.active{background:var(--danger);color:#fff}
-        .btn-secondary{background:rgba(139,92,246,.18);color:#c4b5fd;border:1px solid var(--primary)}
-        .btn-secondary:hover{background:rgba(139,92,246,.32);color:#fff}
-        .btn-audio{background:rgba(16,185,129,.16);color:#6ee7b7;border:1px solid var(--success)}
-        .btn-audio:hover{background:rgba(16,185,129,.3);color:#fff}
-        .btn-variant{background:rgba(255,255,255,.05);color:var(--text-main);border:1px solid var(--surface-border);
-            padding:6px 12px;font-size:.8rem;border-radius:999px;width:auto}
-        .btn-variant:hover{background:rgba(139,92,246,.2);border-color:var(--primary)}
-        .btn-delete-saved{background:rgba(239,68,68,.1);color:#fca5a5;border:1px solid rgba(239,68,68,.25);
-            padding:6px 12px;font-size:.8rem;border-radius:999px;width:auto;margin:0}
-        .btn-delete-saved:hover{background:var(--danger);color:#fff}
-        .action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-        .action-row button{flex:1 1 160px}
-
-        /* Forms */
-        .picker-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-        .picker-row select{flex:1 1 120px;min-width:0;background:rgba(0,0,0,.3);color:var(--text-main);border:1px solid var(--surface-border);
-            border-radius:10px;padding:9px 10px;font-family:inherit;font-size:.85rem}
-        .picker-row input[type=number]{width:72px;background:rgba(0,0,0,.3);color:var(--text-main);border:1px solid var(--surface-border);border-radius:10px;padding:9px;font-family:inherit}
-        .picker-row label{font-size:.82rem;color:var(--text-muted);display:flex;gap:6px;align-items:center}
-        .picker-row .btn-variant{margin:0;padding:9px 14px}
-        .unit{font-size:.8rem;color:var(--text-muted)}
-
-        /* Notes + result */
-        .detected-list{display:flex;gap:8px;flex-wrap:wrap;min-height:48px;background:rgba(0,0,0,.25);padding:10px;
-            border-radius:12px;border:1px solid var(--surface-border);align-items:center}
-        .badge{background:rgba(139,92,246,.18);border:1px solid var(--primary);padding:4px 10px;border-radius:999px;
-            font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:background .2s}
-        .badge span{cursor:pointer;color:var(--text-muted);font-size:1.05rem;line-height:1}
-        .badge span:hover{color:var(--danger)}
-        .empty-list{color:var(--text-muted);font-size:.85rem;font-style:italic}
-        .chord-info-box{background:var(--surface-2);border:1px solid var(--surface-border);border-radius:16px;padding:1.1rem}
-        .chord-title-result{font-family:'Space Grotesk',sans-serif;font-size:1.45rem;font-weight:700;color:#c4b5fd;margin-bottom:.4rem}
-        .chord-detail-row{font-size:.88rem;color:var(--text-muted);margin-bottom:.45rem}
-        .chord-detail-row strong{color:var(--text-main)}
-        .alt-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center;font-size:.78rem;color:var(--text-muted)}
-        .alt-row .btn-variant{margin:0}
-
-        /* Fretboard */
-        .fretboard-box-h{display:inline-block;background:#0d0f17;border:1px solid var(--surface-border);border-radius:12px;
-            padding:14px;margin-top:.6rem;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
-        .fretboard-h-grid{--cw:46px;--rh:30px;display:grid;grid-template-columns:32px repeat(5,var(--cw));grid-template-rows:24px repeat(6,var(--rh));align-items:center}
-        .h-string-label{font-size:.8rem;font-weight:700;color:#c4b5fd;display:flex;align-items:center;gap:4px}
-        .h-fret-header{font-size:.72rem;font-weight:700;color:var(--text-muted);text-align:center}
-        .h-fret-cell{position:relative;border-top:2px solid rgba(255,255,255,.15);border-right:2px solid rgba(255,255,255,.15);
-            height:100%;display:flex;justify-content:center;align-items:center}
-        .h-fret-col-1{border-left:5px solid #f1f5f9}
-        .finger-dot-h{width:22px;height:22px;background:var(--primary);color:#fff;font-size:.7rem;font-weight:700;border-radius:50%;
-            display:flex;justify-content:center;align-items:center;z-index:2;box-shadow:0 0 8px var(--primary-glow)}
-        .lefty .fretboard-h-grid{direction:rtl}
-        .lefty .h-string-label{justify-content:flex-end;direction:ltr}
-        .lefty .h-fret-col-1{border-left:none;border-right:5px solid #f1f5f9}
-
-        /* Saved */
-        .saved-chords-list{display:flex;flex-direction:column;gap:12px}
-        .saved-item-card{background:var(--surface-2);border:1px solid var(--surface-border);padding:1rem;border-radius:14px;
-            display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
-        .saved-item-left{display:flex;flex-direction:column;gap:2px;flex:1 1 280px;min-width:0}
-        .saved-item-title{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:#c4b5fd}
-        /* ===== Android / layar sentuh ===== */
-        button{min-height:44px}
-        .btn-variant,.btn-delete-saved{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
-        .picker-row select{min-height:44px}
-        .picker-row input[type=number]{min-height:44px}
-        .picker-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--primary)}
-        .picker-row label{min-height:44px}
-        .badge{min-height:34px}
-        .badge span{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:28px;margin:-4px -6px -4px 0}
-        @media (pointer:coarse){
-            select,input[type=number]{font-size:16px!important}   /* cegah Chrome Android zoom otomatis saat fokus */
-            .btn-variant{padding:8px 14px}
-        }
-        @media (max-width:520px){
-            body{padding:calc(1rem + env(safe-area-inset-top,0px)) calc(.75rem + env(safe-area-inset-right,0px)) calc(2.5rem + env(safe-area-inset-bottom,0px)) calc(.75rem + env(safe-area-inset-left,0px))}
-            .topbar{margin-bottom:1rem}
-            h1{font-size:1.15rem}
-            .fretboard-box-h{padding:10px}
-            .fretboard-h-grid{--cw:42px;--rh:30px;grid-template-columns:30px repeat(5,var(--cw))}
-            .action-row button{flex:1 1 100%}
-            .picker-row select{flex:1 1 calc(50% - 4px)}
-            .picker-row .btn-variant{flex:1 1 calc(50% - 4px)}
-            .saved-item-left{flex-basis:100%}
-            .saved-item-card>div:last-child{width:100%}
-            .saved-item-card>div:last-child button{flex:1}
-            .alt-row .btn-variant{min-height:38px}
-            .card{padding:1.2rem 1rem}
-            .note-display{font-size:3.8rem}
-            .saved-item-card>div:last-child{flex-direction:row!important}
-        }
-        @media (max-width:360px){
-            .fretboard-h-grid{--cw:36px;--rh:28px;grid-template-columns:28px repeat(5,var(--cw))}
-            .finger-dot-h{width:20px;height:20px}
-            .note-display{font-size:3.2rem}
-        }
-        @media (max-height:480px) and (orientation:landscape){
-            .container{max-width:900px}
-        }
-        @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-    .btn-secondary.active{background:var(--danger);border-color:var(--danger);color:#fff}
-    .chroma-bars{display:none;gap:4px;justify-content:center;align-items:flex-end;height:70px;margin:14px auto 0;max-width:320px}
-        .chroma-bars .cb{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-size:.62rem;color:var(--text-muted)}
-        .chroma-bars .cb i{display:block;width:100%;background:linear-gradient(var(--primary),#6366f1);border-radius:3px 3px 0 0;min-height:2px;transition:height .15s}
-        .algo-row{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:.7rem;font-size:.78rem;color:var(--text-muted)}
-        .algo-row select{background:rgba(0,0,0,.3);color:var(--text-main);border:1px solid var(--surface-border);border-radius:8px;padding:5px 8px;font-family:inherit;font-size:.78rem}
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="pcBanner" style="display:none;position:sticky;top:0;z-index:99;background:#7f1d1d;color:#fff;padding:10px 14px;font:14px/1.4 system-ui,sans-serif;border-radius:10px;margin:0 auto 12px;max-width:720px"></div>
     <noscript><div style="background:#7f1d1d;color:#fff;padding:12px;border-radius:10px;font:14px system-ui,sans-serif">JavaScript nonaktif atau diblokir di browser ini, jadi tombol tidak akan berfungsi. Aktifkan JavaScript, atau buka file ini di Chrome / Firefox / Samsung Internet (bukan lewat pratinjau file, WhatsApp, atau Google Drive).</div></noscript>
-    <script>
-    /* ES5 murni: tetap jalan di browser lama & menampilkan penyebab jika skrip utama gagal */
-    (function () {
-        function show(m) { var b = document.getElementById('pcBanner'); if (b) { b.style.display = 'block'; b.textContent = m; } }
-        window.pcShow = show;
-        window.onerror = function (msg, src, line) { show('Terjadi error di browser ini: ' + msg + (line ? ' (baris ' + line + ')' : '') + '. Coba perbarui browser, atau buka di Chrome / Firefox.'); };
-        try { new Function('async function f(){}; const a=()=>1; return `x`;'); }
-        catch (e) { show('Browser ini terlalu lama untuk aplikasi ini (tidak mendukung JavaScript modern). Perbarui browser atau buka di Chrome / Firefox terbaru.'); }
-        if (location.protocol === 'file:') { setTimeout(function () { var b = document.getElementById('pcBanner'); if (b && b.style.display === 'none' && !(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) show('Halaman dibuka dari file lokal; mikrofon mungkin diblokir. Buka lewat https:// untuk memakai tuner.'); }, 500); }
-    })();
-    </script>
+    <script src="js/boot.js"></script>
     <header class="topbar">
         <div class="brand">
             <div class="logo-mark">♪</div>
@@ -197,7 +27,7 @@
 
     <main class="container">
         <!-- 1. Tuner -->
-        <section class="card tuner">
+        <section class="card tuner on" data-tab="deteksi">
             <div class="card-head">
                 <h2>Pendeteksi Nada</h2>
                 <p>Petik satu senar untuk tuner &amp; daftar nada, atau pakai Mode Strum untuk genjrengan.</p>
@@ -213,6 +43,13 @@
             <div id="centsText" class="hz-display">&nbsp;</div>
             <button id="toggleBtn" class="btn-primary" onclick="toggleListening()">Mulai Mendengarkan</button>
             <button id="strumBtn" class="btn-secondary" style="width:100%;margin-top:.6rem" onclick="toggleStrum()">🎸 Mode Strum (Genjrengan)</button>
+            <div class="algo-row">Sensitivitas nada:
+                <select id="sensSel" onchange="setSens(this.value)">
+                    <option value="rendah">Rendah (ruangan bising)</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="tinggi">Tinggi (petikan pelan)</option>
+                </select>
+            </div>
             <div class="algo-row">Algoritma strum:
                 <select id="algoSel" onchange="strumAlgo=this.value">
                     <option value="klasik" selected>Klasik</option>
@@ -223,7 +60,7 @@
         </section>
 
         <!-- 2. Akor -->
-        <section class="card">
+        <section class="card on" data-tab="deteksi">
             <div class="card-head">
                 <h2>Cari &amp; Analisis Akor</h2>
                 <p>Pilih manual dari kamus, atau petik nada berurutan (nada pertama menentukan akar akor).</p>
@@ -262,7 +99,7 @@
         </section>
 
         <!-- 3. Progresi -->
-        <section class="card">
+        <section class="card" data-tab="progresi">
             <div class="card-head">
                 <h2>Progresi Akor</h2>
                 <p>Susun urutan akor lalu putar dengan metronom.</p>
@@ -276,10 +113,14 @@
                 <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
                 <button class="btn-variant" onclick="progression=[];renderProgression()">Kosongkan</button>
             </div>
+            <div class="picker-row" style="margin-top:12px"><label>Pola strum <select id="patSel" onchange="strumPatSel=this.value;renderPat()"></select></label></div>
+            <div id="patView" class="hz-display" style="text-align:left;letter-spacing:4px"></div>
+            <div class="picker-row" style="margin-top:8px"><label><input type="checkbox" id="autoRec"> Rekam otomatis dari Mode Strum</label>
+                <button class="btn-variant" onclick="shareProg()">📤 Bagikan / Salin</button></div>
         </section>
 
         <!-- 4. Tersimpan -->
-        <section class="card">
+        <section class="card" data-tab="progresi">
             <div class="field-row" style="margin-top:0">
                 <div class="card-head" style="margin:0">
                     <h2>Akor Tersimpan</h2>
@@ -291,876 +132,59 @@
                 <span class="empty-list">Belum ada akor yang disimpan.</span>
             </div>
         </section>
+        <section class="card tuner" data-tab="tuning">
+            <div class="card-head"><h2>Tuner Senar</h2><p>Pilih tuning, petik satu senar; aplikasi menunjukkan senar mana dan arah putar pasaknya.</p></div>
+            <div class="picker-row"><select id="tunSel" onchange="renderTuning()" aria-label="Tuning"></select></div>
+            <div id="tunStrings" class="detected-list" style="margin-top:10px;justify-content:center"></div>
+            <div id="tunNote" class="note-display" style="margin-top:1rem">—</div>
+            <div id="tunMsg" class="hz-display">Tekan mulai lalu petik senar.</div>
+            <div class="cents-meter"><div class="c"></div><div id="tunMark" class="cents-mark"></div></div>
+            <div class="cents-scale"><span>−50</span><span>0</span><span>+50</span></div>
+            <button id="tunBtn" class="btn-primary" onclick="toggleListening()">Mulai Mendengarkan</button>
+        </section>
+        <section class="card" data-tab="kunci">
+            <div class="card-head"><h2>Kunci Lagu &amp; Capo</h2><p>Pilih kunci untuk melihat akor yang cocok, lalu atur capo untuk mendapat bentuk jari yang lebih mudah.</p></div>
+            <div class="picker-row"><select id="keyRoot" onchange="renderKey()" aria-label="Kunci"></select>
+                <select id="keyMode" onchange="renderKey()" aria-label="Mode"><option value="maj">Mayor</option><option value="min">Minor</option></select>
+                <label>Capo <select id="capoSel" onchange="renderKey()"></select></label></div>
+            <div id="keyChords" class="chgrid" style="margin-top:12px"></div>
+            <div id="keyMsg" class="chord-detail-row" style="margin-top:10px"></div>
+            <div class="field-label" style="margin:1rem 0 .5rem">Progresi populer (masuk ke tab Progresi)</div>
+            <div id="keyProgs" class="picker-row"></div>
+            <div id="capoBest" class="chord-detail-row" style="margin-top:12px"></div>
+        </section>
+        <section class="card" data-tab="latih">
+            <div class="card-head"><h2>Latihan &amp; Kuis</h2><p>Genjreng akor yang diminta; Mode Strum mengecek jawabanmu. Waktu 60 detik.</p></div>
+            <div class="picker-row"><select id="drillMode"><option value="drill">Pindah akor (dari Progresi)</option><option value="quiz">Kuis akor acak (dari Kunci)</option></select>
+                <button class="btn-variant" onclick="drillStart()">▶ Mulai</button><button class="btn-variant" onclick="drillStop()">■ Stop</button></div>
+            <div id="drillTarget" class="note-display" style="text-align:center;margin-top:1rem">—</div>
+            <div id="drillInfo" class="hz-display" style="text-align:center">Pilih mode lalu tekan Mulai.</div>
+        </section>
     </main>
+    <nav class="tabbar" id="tabbar">
+        <button data-go="deteksi" class="on"><span>🎸</span>Deteksi</button>
+        <button data-go="tuning"><span>🎚</span>Tuning</button>
+        <button data-go="kunci"><span>🎼</span>Kunci</button>
+        <button data-go="latih"><span>🏋</span>Latih</button>
+        <button data-go="progresi"><span>📋</span>Progresi</button>
+    </nav>
 
-    <script>
-        const CONFIG = {
-            HISTORY_LENGTH: 10,
-            MIN_VOLUME: 0.012,
-            BUFFER_SIZE: 8192,
-            MIN_FREQ: 75,
-            MAX_FREQ: 700
-        };
+    <script src="js/config.js"></script>
+    <script src="js/chords-db.js"></script>
+    <script src="js/pitch.js"></script>
+    <script src="js/gate.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/tuner.js"></script>
+    <script src="js/chords-ui.js"></script>
+    <script src="js/progression.js"></script>
+    <script src="js/strum-analysis.js"></script>
+    <script src="js/strum-mode.js"></script>
+    <script src="js/tabs.js"></script>
+    <script src="js/tuning.js"></script>
+    <script src="js/key-capo.js"></script>
+    <script src="js/strum-pattern.js"></script>
+    <script src="js/practice.js"></script>
+    <script src="js/init.js"></script>
 
-        function micError(err) {
-    const n = err && err.name;
-    if (n === 'NotAllowedError' || n === 'SecurityError') alert('Izin mikrofon ditolak. Di Chrome Android: ketuk ikon gembok di address bar → Izin → Mikrofon → Izinkan, lalu muat ulang.');
-    else if (n === 'NotFoundError') alert('Mikrofon tidak ditemukan di perangkat ini.');
-    else if (!window.isSecureContext || (err && err.message === 'nomic')) alert('Mikrofon hanya bisa dipakai lewat HTTPS (atau localhost). Buka halaman ini lewat alamat https://.');
-    else alert('Gagal mengakses mikrofon.');
-}
-// Jaga layar tetap menyala saat mikrofon aktif (Android mematikan layar & menghentikan mic)
-let wakeLock = null, tunerStream = null;
-async function keepAwake() {
-    try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
-}
-function allowSleep() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && (isListening || isStrum) && !wakeLock) keepAwake();
-});
-let audioContext = null;
-        let analyser = null;
-        let microphone = null;
-        let biquadFilter = null;
-        let isListening = false;
-        let animationId = null;
-        let pitchHistory = [];
-        let lastStablePitch = 0, outlierCount = 0;
-        
-        let detectedNotesList = [];
-        let stableNoteCandidate = "";
-        let stableNoteCount = 0;
-        const REQUIRED_STABLE_FRAMES = 8;
-
-        let savedChordsList = [];
-        let currentDetectedChordObj = null;
-        let activeVariantIndex = 0;
-
-        const noteStrings = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        const openStringFrequencies = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
-
-        // ==DB-START==
-const FLAT = {"C#":"Db","D#":"Eb","F#":"Gb","G#":"Ab","A#":"Bb"};
-// E/A/D = bentuk movable dengan root di senar 6/5/4 (angka = offset dari fret root, x = senar mati)
-const QUALITIES = [
- {k:"",n:"Major",iv:[0,4,7],E:"0 2 2 1 0 0",A:"x 0 2 2 2 0",D:"x x 0 2 3 2"},
- {k:"m",n:"Minor",iv:[0,3,7],E:"0 2 2 0 0 0",A:"x 0 2 2 1 0",D:"x x 0 2 3 1"},
- {k:"5",n:"Power Chord (5)",iv:[0,7],E:"0 2 2 x x x",A:"x 0 2 2 x x",D:"x x 0 2 3 x"},
- {k:"6",n:"Major 6",iv:[0,4,7,9],E:"0 2 2 1 2 0",A:"x 0 2 2 2 2",D:"x x 0 2 0 2"},
- {k:"m6",n:"Minor 6",iv:[0,3,7,9],E:"0 2 2 0 2 0",A:"x 0 2 2 1 2",D:"x x 0 2 0 1"},
- {k:"7",n:"Dominant 7",iv:[0,4,7,10],E:"0 2 0 1 0 0",A:"x 0 2 0 2 0",D:"x x 0 2 1 2"},
- {k:"maj7",n:"Major 7",iv:[0,4,7,11],E:"0 2 1 1 0 0",A:"x 0 2 1 2 0",D:"x x 0 2 2 2"},
- {k:"m7",n:"Minor 7",iv:[0,3,7,10],E:"0 2 0 0 0 0",A:"x 0 2 0 1 0",D:"x x 0 2 1 1"},
- {k:"9",n:"Dominant 9",iv:[0,4,7,10,2],E:"0 2 0 1 0 2",A:"x 0 -1 0 0 0"},
- {k:"add9",n:"Add 9",iv:[0,4,7,2],E:"0 2 2 1 0 2",A:"x 0 2 4 2 0"},
- {k:"sus2",n:"Suspended 2",iv:[0,2,7],E:"0 2 4 4 0 0",A:"x 0 2 2 0 0",D:"x x 0 2 3 0"},
- {k:"sus4",n:"Suspended 4",iv:[0,5,7],E:"0 2 2 2 0 0",A:"x 0 2 2 3 0",D:"x x 0 2 3 3"},
- {k:"7sus4",n:"7 Suspended 4",iv:[0,5,7,10],E:"0 2 0 2 0 0",A:"x 0 2 0 3 0"},
- {k:"dim",n:"Diminished",iv:[0,3,6],E:"0 1 2 0 x x",A:"x 0 1 2 1 x",D:"x x 0 1 3 1"},
- {k:"dim7",n:"Diminished 7",iv:[0,3,6,9],E:"0 1 2 0 2 0",A:"x 0 1 2 1 2",D:"x x 0 1 0 1"},
- {k:"m7b5",n:"Half-Diminished (m7♭5)",iv:[0,3,6,10],E:"0 1 0 0 x x",A:"x 0 1 0 1 x",D:"x x 0 1 1 1"},
- {k:"aug",n:"Augmented",iv:[0,4,8],E:"0 3 2 1 1 0",A:"x 0 3 2 2 1",D:"x x 0 3 3 2"}
-];
-// Bentuk open tambahan (C, G, F, B7 dst. tidak bisa dibuat dari 3 bentuk di atas)
-const OPEN = {
- "C":["x 3 2 0 1 0"],"C7":["x 3 2 3 1 0"],"Cmaj7":["x 3 2 0 0 0"],"Cadd9":["x 3 2 0 3 0"],
- "Csus2":["x 3 0 0 1 3"],"Csus4":["x 3 3 0 1 1"],"C6":["x 3 2 2 1 0"],
- "G":["3 2 0 0 0 3","3 2 0 0 3 3"],"G7":["3 2 0 0 0 1"],"Gmaj7":["3 2 0 0 0 2"],"G6":["3 2 0 0 0 0"],
- "Gadd9":["3 2 0 2 0 3"],"Gsus2":["3 0 0 0 3 3"],"Gsus4":["3 3 0 0 1 3"],
- "F":["x x 3 2 1 1"],"Fmaj7":["x x 3 2 1 0"],"Fadd9":["x x 3 2 1 3"],
- "B7":["x 2 1 2 0 2"],"A9":["x 0 2 4 2 3"],"E7":["0 2 2 1 3 0"],"Em7":["0 2 2 0 3 0"],"A7":["x 0 2 2 2 3"]
-};
-const SHAPE_ROOT = {E:4, A:9, D:2};
-const SHAPE_LABEL = {E:"Bentuk E (root senar 6)", A:"Bentuk A (root senar 5)", D:"Bentuk D (root senar 4)"};
-function parseShape(str) { return str.split(" ").map(t => t === "x" ? null : parseInt(t, 10)); }
-function buildChordDatabase() {
-    const db = {};
-    noteStrings.forEach((root, ri) => {
-        QUALITIES.forEach(q => {
-            const key = root + q.k, seen = new Set(), variants = [];
-            const add = (f, desc) => { const id = f.join(","); if (!seen.has(id)) { seen.add(id); variants.push({ fingering: f, desc }); } };
-            (OPEN[key] || []).forEach(sh => add(parseShape(sh).map(v => v === null ? -1 : v), "Open Position"));
-            ["E","A","D"].forEach(t => {
-                if (!q[t]) return;
-                const r = (ri - SHAPE_ROOT[t] + 12) % 12;
-                const f = parseShape(q[t]).map(v => v === null ? -1 : (v + r < 0 ? NaN : v + r));
-                if (f.some(isNaN)) return;
-                const pos = f.filter(v => v > 0);
-                if (pos.length && Math.max(...pos) > 15) return;
-                add(f, r === 0 ? "Open Position" : `Barre Fret ${r} — ${SHAPE_LABEL[t]}`);
-            });
-            const lo = f => { const p = f.filter(v => v > 0); return p.length ? Math.min(...p) : 0; };
-            variants.sort((a, b) => lo(a.fingering) - lo(b.fingering));
-            db[key] = {
-                key, root, variants,
-                name: `${root}${FLAT[root] ? "/" + FLAT[root] : ""} ${q.n}`,
-                notes: q.iv.map(i => noteStrings[(ri + i) % 12])
-            };
-        });
-    });
-    return db;
-}
-const chordDatabase = buildChordDatabase();
-// ==DB-END==
-
-function noteFromPitch(frequency) {
-            const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
-            return Math.round(noteNum) + 69;
-        }
-
-        function getMedian(arr) {
-            if (arr.length === 0) return 0;
-            const sorted = [...arr].sort((a, b) => a - b);
-            const mid = Math.floor(sorted.length / 2);
-            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-        }
-
-        function detectPitch(buffer, sampleRate) {
-            // YIN: jendela terbatas (hanya periode yang relevan untuk gitar) -> ~12x lebih ringan dari versi lama
-            const W = 2560;
-            const maxTau = Math.min(Math.floor(sampleRate / CONFIG.MIN_FREQ) + 2, buffer.length - W - 2);
-            const minTau = Math.max(2, Math.floor(sampleRate / CONFIG.MAX_FREQ));
-            const off = buffer.length - W - maxTau - 1;      // pakai sampel terbaru
-            if (off < 0) return -1;
-
-            let rms = 0;
-            for (let i = off; i < buffer.length; i++) rms += buffer[i] * buffer[i];
-            rms = Math.sqrt(rms / (buffer.length - off));
-            if (rms < CONFIG.MIN_VOLUME) return -1;
-
-            const y = new Float32Array(maxTau + 1);
-            for (let tau = 1; tau <= maxTau; tau++) {
-                let sum = 0;
-                for (let i = 0; i < W; i++) {
-                    const d = buffer[off + i] - buffer[off + i + tau];
-                    sum += d * d;
-                }
-                y[tau] = sum;
-            }
-            y[0] = 1;
-            let run = 0;
-            for (let tau = 1; tau <= maxTau; tau++) {
-                run += y[tau];
-                y[tau] = y[tau] * tau / (run || 1);
-            }
-
-            const THR = 0.15;
-            let tauFound = -1;
-            for (let tau = minTau; tau < maxTau; tau++) {
-                if (y[tau] < THR) {
-                    while (tau + 1 < maxTau && y[tau + 1] < y[tau]) tau++;
-                    tauFound = tau;
-                    break;
-                }
-            }
-            if (tauFound === -1) {
-                let minVal = Infinity, minTauIdx = -1;
-                for (let tau = minTau; tau < maxTau; tau++) if (y[tau] < minVal) { minVal = y[tau]; minTauIdx = tau; }
-                if (minVal < 0.25) tauFound = minTauIdx; else return -1;
-            }
-
-            // koreksi oktaf: jika setengah periode juga nyaris sama bagusnya, itu nada dasarnya yang sebenarnya (frekuensi lebih tinggi)
-            // (dibiarkan: YIN mengambil lembah pertama sehingga jarang salah oktaf)
-
-            // interpolasi parabola -> presisi sub-sampel (penting untuk senar tinggi)
-            let better = tauFound;
-            if (tauFound > 1 && tauFound < maxTau) {
-                const a = y[tauFound - 1], b = y[tauFound], c = y[tauFound + 1], den = a - 2 * b + c;
-                if (den !== 0) better = tauFound + 0.5 * (a - c) / den;
-            }
-            const frequency = sampleRate / better;
-            if (frequency < CONFIG.MIN_FREQ || frequency > CONFIG.MAX_FREQ) return -1;
-            return frequency;
-        }
-
-        async function toggleListening() {
-            const btn = document.getElementById('toggleBtn');
-            const noteEl = document.getElementById('note');
-            const hzEl = document.getElementById('hz');
-            const statusBox = document.getElementById('statusBox');
-            const statusText = document.getElementById('statusText');
-
-            if (!isListening) {
-                if (isStrum) stopStrum();
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomic');
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-                    tunerStream = stream;
-                    
-                    microphone = audioContext.createMediaStreamSource(stream);
-                    biquadFilter = audioContext.createBiquadFilter();
-                    biquadFilter.type = "highpass";
-                    biquadFilter.frequency.setValueAtTime(65, audioContext.currentTime);
-
-                    analyser = audioContext.createAnalyser();
-                    analyser.fftSize = CONFIG.BUFFER_SIZE;
-                    
-                    const lp = audioContext.createBiquadFilter();
-                    lp.type = 'lowpass'; lp.frequency.setValueAtTime(1500, audioContext.currentTime);   // buang desis & harmonik tinggi
-                    microphone.connect(biquadFilter);
-                    biquadFilter.connect(lp);
-                    lp.connect(analyser);
-
-                    isListening = true; keepAwake();
-                    pitchHistory = [];
-                    
-                    btn.textContent = "Berhenti";
-                    btn.classList.add('active');
-                    statusBox.classList.add('listening');
-                    statusText.textContent = "Mendengarkan Nada...";
-                    
-                    updatePitch();
-                } catch (err) {
-                    micError(err);
-                    console.error(err);
-                }
-            } else {
-                if (tunerStream) { tunerStream.getTracks().forEach(t => t.stop()); tunerStream = null; }
-                if (audioContext && audioContext.state !== 'closed') audioContext.close();
-                cancelAnimationFrame(animationId);
-                isListening = false; allowSleep();
-                
-                btn.textContent = "Mulai Mendengarkan";
-                btn.classList.remove('active');
-                statusBox.classList.remove('listening');
-                statusText.textContent = "Mikrofon nonaktif";
-                
-                noteEl.textContent = "—";
-                noteEl.classList.remove('active-note');
-                hzEl.textContent = "0.0 Hz";
-            }
-        }
-
-        function updatePitch() {
-            const buffer = new Float32Array(CONFIG.BUFFER_SIZE);
-            analyser.getFloatTimeDomainData(buffer);
-            const rawPitch = detectPitch(buffer, audioContext.sampleRate);
-
-            const noteEl = document.getElementById('note');
-            const hzEl = document.getElementById('hz');
-
-            if (rawPitch !== -1) {
-                if (pitchHistory.length >= 3) {
-                    const ref = getMedian(pitchHistory);
-                    if (Math.abs(12 * Math.log2(rawPitch / ref)) > 0.8) {      // loncatan > ~80 cent: kemungkinan glitch atau senar baru
-                        outlierCount++;
-                        if (outlierCount < 3) { if (isListening) animationId = requestAnimationFrame(updatePitch); return; }
-                        pitchHistory = []; stableNoteCount = 0;                // 3 frame berturut-turut -> memang nada baru
-                    }
-                }
-                outlierCount = 0;
-                pitchHistory.push(rawPitch);
-                if (pitchHistory.length > CONFIG.HISTORY_LENGTH) pitchHistory.shift();
-
-                let medianPitch = getMedian(pitchHistory);
-                let note = noteFromPitch(medianPitch);
-                let noteName = noteStrings[note % 12];
-
-                const octave = Math.floor(note / 12) - 1;          // nomor MIDI -> oktaf ilmiah (E2 = senar 6 terbuka)
-                noteEl.innerHTML = noteName + '<span class="oct">' + octave + '</span>';
-                noteEl.classList.add('active-note');
-                hzEl.textContent = `${medianPitch.toFixed(1)} Hz`;
-                const cents = 1200 * Math.log2(medianPitch / (440 * Math.pow(2, (note - 69) / 12)));
-                const cm = document.getElementById('centsMark'), ok = Math.abs(cents) <= 5;
-                cm.style.left = (50 + Math.max(-50, Math.min(50, cents))).toFixed(1) + '%';
-                cm.style.background = ok ? 'var(--success)' : 'var(--warning)';
-                document.getElementById('centsText').textContent = (cents > 0 ? '+' : '') + cents.toFixed(0) + ' cents' + (ok ? ' ✓ pas' : cents > 0 ? ' (terlalu tinggi)' : ' (terlalu rendah)');
-
-                if (noteName === stableNoteCandidate) {
-                    stableNoteCount++;
-                } else {
-                    stableNoteCandidate = noteName;
-                    stableNoteCount = 1;
-                }
-
-                if (stableNoteCount >= REQUIRED_STABLE_FRAMES) {
-                    let lastNoteInList = detectedNotesList[detectedNotesList.length - 1];
-                    if (noteName !== lastNoteInList) {
-                        addNoteToList(noteName);
-                    }
-                    stableNoteCount = 0;
-                }
-            } else {
-                pitchHistory = [];
-                stableNoteCount = 0;
-                stableNoteCandidate = "";
-                noteEl.textContent = "—";
-                noteEl.classList.remove('active-note');
-                hzEl.textContent = "Petik senar gitar...";
-                document.getElementById('centsMark').style.left = '50%';
-                document.getElementById('centsMark').style.background = 'var(--text-muted)';
-                document.getElementById('centsText').innerHTML = '&nbsp;';
-            }
-
-            if (isListening) {
-                animationId = requestAnimationFrame(updatePitch);
-            }
-        }
-
-        function addNoteToList(note) {
-            if (detectedNotesList.length >= 6) {
-                detectedNotesList.shift();
-            }
-            detectedNotesList.push(note);
-            renderDetectedList();
-            evaluateChordFromList();
-        }
-
-        function removeNote(index) {
-            detectedNotesList.splice(index, 1);
-            renderDetectedList();
-            evaluateChordFromList();
-        }
-
-        function renderDetectedList() {
-            const listEl = document.getElementById('detectedList');
-            if (detectedNotesList.length === 0) {
-                listEl.innerHTML = `<span class="empty-list">Belum ada nada yang masuk. Petik senar gitar...</span>`;
-                return;
-            }
-
-            listEl.innerHTML = detectedNotesList.map((n, i) => `
-                <div class="badge">
-                    ${i + 1}. ${n} <span onclick="removeNote(${i})">&times;</span>
-                </div>
-            `).join('');
-        }
-
-        let currentCandidates = [];
-
-function rankChords() {
-    const first = detectedNotesList[0];
-    const set = [...new Set(detectedNotesList)];
-    const res = [];
-    for (const key in chordDatabase) {
-        const c = chordDatabase[key];
-        const match = c.notes.filter(n => set.includes(n)).length;
-        const extra = set.length - match, missing = c.notes.length - match;
-        if (match < 2 || extra > 2) continue;
-        const score = match * 3 - extra * 3 - missing + (c.root === first ? 4 : 0) + (!extra && !missing ? 4 : 0);
-        res.push({ key, score });
-    }
-    return res.sort((a, b) => b.score - a.score);
-}
-
-function showChordKey(key) {
-    currentDetectedChordObj = chordDatabase[key];
-    activeVariantIndex = 0;
-    document.getElementById('saveChordBtn').style.display = 'block';
-    document.getElementById('playAudioBtn').style.display = 'block';
-    displayChordInfo(currentDetectedChordObj, 0, 'chordResultBox');
-}
-
-function pickManual() {
-    learnable = false;
-    currentCandidates = [];
-    showChordKey(document.getElementById('rootSel').value + document.getElementById('qualSel').value);
-}
-
-function clearNotes() {
-    detectedNotesList = [];
-    renderDetectedList();
-    evaluateChordFromList();
-}
-
-function initPicker() {
-    document.getElementById('rootSel').innerHTML = noteStrings.map(n => `<option value="${n}">${n}${FLAT[n] ? "/" + FLAT[n] : ""}</option>`).join('');
-    document.getElementById('qualSel').innerHTML = QUALITIES.map(q => `<option value="${q.k}">${q.n}</option>`).join('');
-    try { exemplars = JSON.parse(localStorage.getItem('pc_ex') || '{}'); } catch (e) { exemplars = {}; }
-    try { savedChordsList = JSON.parse(localStorage.getItem('pc_saved') || '[]'); } catch (e) { savedChordsList = []; }
-    renderSavedChords();
-}
-
-function evaluateChordFromList() {
-    learnable = false;
-    const resultBox = document.getElementById('chordResultBox');
-    const saveBtn = document.getElementById('saveChordBtn');
-    const audioBtn = document.getElementById('playAudioBtn');
-
-    if (detectedNotesList.length === 0) {
-        currentDetectedChordObj = null; currentCandidates = [];
-        saveBtn.style.display = 'none'; audioBtn.style.display = 'none';
-        resultBox.innerHTML = `
-            <div class="chord-title-result">—</div>
-            <div class="chord-detail-row">Nada Pembentuk: <strong>-</strong></div>
-            <div class="chord-detail-row">Posisi Jari: <strong>-</strong></div>
-            <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">List nada kosong.</div>`;
-        return;
-    }
-    const ranked = rankChords();
-    if (ranked.length) {
-        currentCandidates = ranked.slice(0, 6).map(r => r.key);
-        showChordKey(ranked[0].key);
-    } else {
-        currentDetectedChordObj = null; currentCandidates = [];
-        saveBtn.style.display = 'none'; audioBtn.style.display = 'none';
-        resultBox.innerHTML = `
-            <div class="chord-title-result">Kombinasi Urutan Kustom</div>
-            <div class="chord-detail-row">Urutan Nada: <strong>${detectedNotesList.join(' → ')}</strong></div>
-            <div class="chord-detail-row" style="color: var(--warning);">Belum cocok dengan kamus master akor.</div>`;
-    }
-}
-
-function switchVariant(direction) {
-            if (!currentDetectedChordObj) return;
-            let totalVariants = currentDetectedChordObj.variants.length;
-            activeVariantIndex = (activeVariantIndex + direction + totalVariants) % totalVariants;
-            displayChordInfo(currentDetectedChordObj, activeVariantIndex, 'chordResultBox');
-        }
-
-        function playCurrentChordAudio() {
-            if (!currentDetectedChordObj) return;
-            let variant = currentDetectedChordObj.variants[activeVariantIndex];
-            playChordFingering(variant.fingering);
-        }
-
-        function playChordFingering(fingeringArray) {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            window._pc = window._pc || new AudioCtx(); let ctx = window._pc;
-            if (ctx.state === 'suspended') ctx.resume();
-
-            let now = ctx.currentTime;
-            fingeringArray.forEach((fret, stringIndex) => {
-                if (fret === -1) return;
-                let baseFreq = openStringFrequencies[stringIndex];
-                let freq = baseFreq * Math.pow(2, fret / 12);
-                let delay = stringIndex * 0.035;
-
-                let osc = ctx.createOscillator();
-                let gain = ctx.createGain();
-
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, now + delay);
-
-                gain.gain.setValueAtTime(0, now + delay);
-                gain.gain.linearRampToValueAtTime(0.25, now + delay + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 1.2);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(now + delay);
-                osc.stop(now + delay + 1.3);
-            });
-        }
-
-        function generateHorizontalFretboardHTML(fingeringArray) {
-    const pos = fingeringArray.filter(f => f > 0);
-    const minFret = pos.length ? Math.min(...pos) : 1, maxFret = pos.length ? Math.max(...pos) : 1;
-    const startFret = maxFret <= 5 ? 1 : minFret;
-    const stringNames = ['E', 'A', 'D', 'G', 'B', 'e'];
-    let h = `<div class="fretboard-box-h"><div class="fretboard-h-grid"><div></div>`;
-    for (let i = 0; i < 5; i++) h += `<div class="h-fret-header">${startFret + i}</div>`;
-    for (let s = 0; s < 6; s++) {
-        const f = fingeringArray[s];
-        const mark = f === 0 ? 'o' : (f === -1 ? 'x' : '');
-        const col = f === 0 ? 'var(--success)' : (f === -1 ? '#ef4444' : 'var(--text-muted)');
-        h += `<div class="h-string-label"><span>${stringNames[s]}</span><span style="color:${col};font-size:0.75rem;margin-left:2px;">${mark}</span></div>`;
-        for (let i = 0; i < 5; i++) {
-            const cur = startFret + i;
-            const cls = (i === 0 && startFret === 1) ? 'h-fret-col-1' : '';
-            h += `<div class="h-fret-cell ${cls}">${f === cur ? `<div class="finger-dot-h">${cur}</div>` : ''}</div>`;
-        }
-    }
-    return h + `</div></div>`;
-}
-
-function displayChordInfo(chord, variantIdx, elementId) {
-    const resultBox = document.getElementById(elementId);
-    const variant = chord.variants[variantIdx];
-    const fretboardMarkup = generateHorizontalFretboardHTML(variant.fingering);
-    if (elementId !== 'chordResultBox') return fretboardMarkup;
-
-    let variantButtonsHTML = '';
-    if (chord.variants.length > 1) {
-        variantButtonsHTML = `
-            <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <button class="btn-variant" onclick="switchVariant(-1)">◀ Bentuk Lain</button>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Variasi ${variantIdx + 1} dari ${chord.variants.length}</span>
-                <button class="btn-variant" onclick="switchVariant(1)">Bentuk Lain ▶</button>
-            </div>`;
-    }
-    const alts = currentCandidates.filter(k => k !== chord.key);
-    const altHTML = alts.length ? `
-        <div class="alt-row">Kemungkinan lain:
-            ${alts.map(k => `<button class="btn-variant" onclick="pickAlt('${k}')">${k}</button>`).join('')}
-        </div>` : '';
-
-    resultBox.innerHTML = `
-        <div class="chord-title-result">${chord.name}</div>
-        <div class="chord-detail-row">Nada Pembentuk: <strong>${chord.notes.join(' - ')}</strong></div>
-        <div class="chord-detail-row">Posisi Jari: <strong>${variant.desc}</strong></div>
-        <div style="text-align: center;">${fretboardMarkup}</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Keterangan: <span style="color:var(--success);">o</span> = Open string, <span style="color:#ef4444;">x</span> = Senar mati</div>
-        ${learnable ? `<div class="alt-row"><button class="btn-variant" onclick="learnCurrent()">✓ Benar, ingat pola ini</button><span>Salah? Pilih akor yang benar di "Kemungkinan lain" agar dipelajari.</span></div>` : ''}
-        <div class="alt-row">Transpose:
-            <button class="btn-variant" onclick="transposeChord(-1)">♭ −1</button>
-            <button class="btn-variant" onclick="transposeChord(1)">♯ +1</button></div>
-        ${variantButtonsHTML}${altHTML}`;
-}
-
-function saveCurrentChord() {
-            if (!currentDetectedChordObj) return;
-            
-            let chordToSave = {
-                name: currentDetectedChordObj.name,
-                notes: currentDetectedChordObj.notes,
-                variant: currentDetectedChordObj.variants[activeVariantIndex]
-            };
-
-            let exists = savedChordsList.some(item => item.name === chordToSave.name && item.variant.desc === chordToSave.variant.desc);
-            if (!exists) {
-                savedChordsList.push(chordToSave);
-                renderSavedChords();
-            } else {
-                alert("Variasi akor ini sudah ada di dalam daftar tersimpan!");
-            }
-        }
-
-        function removeSavedChord(index) {
-            savedChordsList.splice(index, 1);
-            renderSavedChords();
-        }
-
-        function renderSavedChords() {
-            try { localStorage.setItem('pc_saved', JSON.stringify(savedChordsList)); } catch (e) {}
-            const container = document.getElementById('savedChordsContainer');
-            if (savedChordsList.length === 0) {
-                container.innerHTML = `<span class="empty-list">Belum ada akor yang disimpan.</span>`;
-                return;
-            }
-
-            container.innerHTML = savedChordsList.map((savedItem, idx) => {
-                let miniFretHTML = generateHorizontalFretboardHTML(savedItem.variant.fingering);
-                return `
-                    <div class="saved-item-card">
-                        <div class="saved-item-left">
-                            <span class="saved-item-title">${savedItem.name}</span>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Nada: ${savedItem.notes.join(' - ')}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">Posisi: ${savedItem.variant.desc}</div>
-                            <div style="margin-top: 6px; text-align: left;">${miniFretHTML}</div>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <button class="btn-variant" style="padding: 4px 8px; font-size: 0.75rem;" onclick='playChordFingering(${JSON.stringify(savedItem.variant.fingering)})'>🔊 Dengar</button>
-                            <button class="btn-delete-saved" onclick="removeSavedChord(${idx})">Hapus</button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-    
-function transposeChord(d) {
-    if (!currentDetectedChordObj) return;
-    const c = currentDetectedChordObj, q = c.key.slice(c.root.length);
-    const nr = noteStrings[(noteStrings.indexOf(c.root) + d + 12) % 12];
-    currentCandidates = [];
-    showChordKey(nr + q);
-}
-
-let progression = [], progTimers = [];
-function addToProgression() {
-    if (!currentDetectedChordObj) { alert('Pilih atau deteksi akor dulu.'); return; }
-    progression.push({ key: currentDetectedChordObj.key, v: activeVariantIndex });
-    renderProgression();
-}
-function renderProgression() {
-    const el = document.getElementById('progList');
-    if (!progression.length) { el.innerHTML = '<span class="empty-list">Belum ada progresi.</span>'; return; }
-    el.innerHTML = progression.map((p, i) => `<div class="badge">${p.key} <span onclick="progression.splice(${i},1);renderProgression()">&times;</span></div>`).join('');
-}
-function audioCtx() { window._pc = window._pc || new (window.AudioContext || window.webkitAudioContext)(); if (window._pc.state === 'suspended') window._pc.resume(); return window._pc; }
-function clickSound(accent) {
-    const ctx = audioCtx(), t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-    o.frequency.value = accent ? 1500 : 1000; o.type = 'square';
-    g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.06);
-}
-function stopProgression() {
-    progTimers.forEach(clearTimeout); progTimers = [];
-    document.querySelectorAll('#progList .badge').forEach(b => b.style.background = '');
-}
-function playProgression() {
-    stopProgression();
-    if (!progression.length) return;
-    const bpm = Math.max(40, Math.min(200, +document.getElementById('bpm').value || 80)), beat = 60000 / bpm;
-    const metro = document.getElementById('metroChk').checked;
-    progression.forEach((p, ci) => {
-        progTimers.push(setTimeout(() => {
-            document.querySelectorAll('#progList .badge').forEach((b, i) => b.style.background = i === ci ? 'rgba(16,185,129,.4)' : '');
-            playChordFingering(chordDatabase[p.key].variants[p.v].fingering);
-        }, ci * 4 * beat));
-        if (metro) for (let b = 0; b < 4; b++) progTimers.push(setTimeout(() => clickSound(b === 0), (ci * 4 + b) * beat));
-    });
-    progTimers.push(setTimeout(stopProgression, progression.length * 4 * beat));
-}
-function copySaved() {
-    if (!savedChordsList.length) { alert('Belum ada akor tersimpan.'); return; }
-    const txt = savedChordsList.map(c => `${c.name} (${c.variant.desc}): ${c.variant.fingering.map(v => v === -1 ? 'x' : v).join(' ')}`).join('\n');
-    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => alert('Daftar disalin!'), () => prompt('Salin manual:', txt));
-}
-
-// ==STRUM-START==
-let strumAlgo = 'klasik', exemplars = {}, lastObs = null, learnable = false;
-function computeChroma(fd, sr, n) { return (strumAlgo === 'klasik' ? computeChromaClassic : computeChromaH)(fd, sr, n); }
-function computeChromaClassic(fd, sampleRate, fftSize) {
-    const binHz = sampleRate / fftSize, chroma = new Float32Array(12);
-    const kLo = Math.max(1, Math.floor(70 / binHz)), kHi = Math.min(fd.length - 2, Math.ceil(2000 / binHz));
-    let maxDb = -Infinity;
-    for (let k = kLo; k <= kHi; k++) if (fd[k] > maxDb) maxDb = fd[k];
-    const floor = maxDb - 30, bass = { m: 0 };
-    for (let k = kLo; k <= kHi; k++) {
-        const b = fd[k];
-        if (b < floor || b < fd[k - 1] || b < fd[k + 1]) continue;
-        const a = fd[k - 1], c = fd[k + 1], den = a - 2 * b + c;
-        const f = (k + (den ? 0.5 * (a - c) / den : 0)) * binHz;
-        const mag = Math.pow(10, b / 20);
-        const pc = ((Math.round(69 + 12 * Math.log2(f / 440)) % 12) + 12) % 12;
-        chroma[pc] += mag;
-        if (f < 200 && mag > bass.m) { bass.m = mag; bass.pc = pc; }
-    }
-    return { chroma, bass, maxMag: Math.pow(10, maxDb / 20) };
-}
-// Chroma berbasis salience harmonik: tiap kandidat nada dasar dinilai dari harmoniknya (1-6),
-// lalu harmoniknya "dibuang" (cancellation) sebelum mencari nada berikutnya. Tuning gitar dikoreksi otomatis.
-const HARM_W = [1, .7, .45, .3, .2, .12];
-function computeChromaH(fd, sampleRate, fftSize) {
-    const binHz = sampleRate / fftSize, K = fd.length;
-    let mx = -Infinity;
-    for (let k = 1; k < K; k++) if (fd[k] > mx) mx = fd[k];
-    const pk = new Float32Array(K);
-    for (let k = 1; k < K - 1; k++) {
-        const d = fd[k] - mx;
-        if (d > -35 && fd[k] >= fd[k - 1] && fd[k] >= fd[k + 1]) pk[k] = Math.pow(10, d / 20);
-    }
-    // koreksi tuning: rata-rata melingkar selisih tiap puncak terhadap semitone terdekat
-    let sx = 0, sy = 0;
-    for (let k = Math.floor(80 / binHz); k < Math.min(K - 2, 1000 / binHz); k++) {
-        if (!pk[k] || fd[k] < mx - 30) continue;
-        const a = fd[k - 1], b = fd[k], c = fd[k + 1], den = a - 2 * b + c;
-        const f = (k + (den ? 0.5 * (a - c) / den : 0)) * binHz;
-        const m = 69 + 12 * Math.log2(f / 440), d = m - Math.round(m);
-        sx += pk[k] * Math.cos(2 * Math.PI * d); sy += pk[k] * Math.sin(2 * Math.PI * d);
-    }
-    const off = Math.atan2(sy, sx) / (2 * Math.PI);
-    const band = f => [Math.max(1, Math.floor(f * 0.9825 / binHz)), Math.min(K - 2, Math.ceil(f * 1.0175 / binHz))];
-    const chroma = new Float32Array(12), chosen = [];
-    let first = 0;
-    for (let it = 0; it < 6; it++) {
-        let best = -1, bs = 0;
-        for (let m = 40; m <= 79; m++) {
-            const f0 = 440 * Math.pow(2, (m - 69 + off) / 12);
-            let sal = 0;
-            for (let h = 1; h <= 6; h++) {
-                const [lo, hi] = band(f0 * h);
-                if (lo > K - 2) break;
-                let mm = 0;
-                for (let k = lo; k <= hi; k++) if (pk[k] > mm) mm = pk[k];
-                sal += HARM_W[h - 1] * mm;
-            }
-            if (sal > bs) { bs = sal; best = m; }
-        }
-        if (best < 0 || (it > 0 && bs < 0.25 * first)) break;
-        if (!it) first = bs;
-        chroma[best % 12] += bs; chosen.push(best);
-        const f0 = 440 * Math.pow(2, (best - 69 + off) / 12);
-        for (let h = 1; h <= 8; h++) {
-            const [lo, hi] = band(f0 * h);
-            for (let k = lo; k <= Math.min(hi, K - 2); k++) pk[k] *= 0.15;
-        }
-    }
-    const lows = chosen.filter(m => m <= 55);
-    return { chroma, bass: lows.length ? { pc: Math.min(...lows) % 12, m: 1 } : { m: 0 }, maxMag: 1 };
-}
-function pickStrumNotes(ema, bass, maxMag) {
-    const mx = Math.max(...ema);
-    if (!(mx > 0)) return null;
-    let names = [...ema].map((v, pc) => ({ pc, v: v / mx })).filter(o => o.v >= 0.4)
-        .sort((a, b) => b.v - a.v).slice(0, 5).map(o => noteStrings[o.pc]);
-    const bn = (bass.pc !== undefined && bass.m >= 0.3 * maxMag) ? noteStrings[bass.pc] : '';
-    if (bn && names.includes(bn)) names = [bn, ...names.filter(n => n !== bn)];
-    return { names, sig: [...names].sort().join(',') + '|' + bn };
-}
-// Cocokkan chroma ke template akor (cosine similarity) + prior kualitas akor + bonus nada bass
-// akor yang nada-nadanya identik dengan akor lain (Am7 = C6) diberi prior agar yang lebih umum menang saat bass tak terdengar
-const QUAL_PRIOR = { "6": 0.03, "m6": 0.03, "dim7": 0.02, "sus2": 0.01, "aug": 0.01 };
-function cosine(a, b) { let d = 0, na = 0, nb = 0; for (let i = 0; i < 12; i++) { d += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; } return d / (Math.sqrt(na * nb) || 1); }
-function saveExemplar(key, obs) {
-    const mx = Math.max(...obs), v = obs.map(x => x / mx);
-    (exemplars[key] = exemplars[key] || []).push(v);
-    if (exemplars[key].length > 6) exemplars[key].shift();
-    try { localStorage.setItem('pc_ex', JSON.stringify(exemplars)); } catch (e) {}
-}
-function rankByChroma(chroma, bassPc) {
-    const mx = Math.max(...chroma);
-    if (!(mx > 0)) return [];
-    const obs = Array.from(chroma, v => v / mx), no = Math.hypot(...obs), res = [];
-    for (const key in chordDatabase) {
-        const c = chordDatabase[key], t = new Array(12).fill(0);
-        c.notes.forEach(n => {
-            const pc = noteStrings.indexOf(n), w = n === c.root ? 1.2 : 1;
-            t[pc] += w;
-            if (strumAlgo === 'klasik') { t[(pc + 7) % 12] += 0.3 * w; t[(pc + 4) % 12] += 0.15 * w; }
-        });
-        const nt = Math.hypot(...t);
-        let score = obs.reduce((a, v, i) => a + v * t[i], 0) / (no * nt);
-        score -= 0.012 * Math.max(0, c.notes.length - 3);
-        if (bassPc >= 0 && noteStrings[bassPc] === c.root) score += strumAlgo === 'klasik' ? 0.04 : 0.08;
-        score -= QUAL_PRIOR[key.slice(c.root.length)] || 0;
-        // akor yang lebih lengkap menang jika energi terbaca lebih banyak dijelaskan olehnya (Cm7 vs D#5)
-        const sumObs = obs.reduce((a, v) => a + v, 0) || 1;
-        score += 0.1 * c.notes.reduce((a, n) => a + obs[noteStrings.indexOf(n)], 0) / sumObs;
-        if (key.slice(c.root.length) === '5') {   // power chord: hanya valid jika terts benar-benar tidak terdengar
-            const r = noteStrings.indexOf(c.root);
-            score -= 0.04 + 0.4 * Math.max(obs[(r + 3) % 12], obs[(r + 4) % 12]);
-        }
-        // penalti nada "asing": nada yang terdengar jelas tapi tidak ada di akor ini
-        // (mencegah Cm7 terbaca D# / D#5 hanya karena C lebih lemah dari A#)
-        // nada yang jatuh di harmonik ke-3 (+7) dan ke-5 (+4) dari nada akor dimaafkan: itu bocoran harmonik, bukan nada asing
-        // (tanpa ini akor 4 nada seperti A#m7 ikut terhukum oleh D#/C/D/A hasil harmonik G#, F, A#)
-        const inChord = new Set(c.notes.map(n => noteStrings.indexOf(n)));
-        const excused = new Set(inChord);
-        inChord.forEach(pc => { excused.add((pc + 7) % 12); excused.add((pc + 4) % 12); });
-        let stray = 0;
-        obs.forEach((v, i) => { if (!excused.has(i) && v > stray) stray = v; });
-        score -= 0.6 * Math.max(0, stray - 0.1);
-        if (exemplars[key]) {   // akor ini pernah dikonfirmasi pengguna: bonus jika pola chroma mirip
-            const cs = Math.max(...exemplars[key].map(v => cosine(obs, v)));
-            score += 0.5 * Math.max(0, cs - 0.7) / 0.3;
-        }
-        res.push({ key, score });
-    }
-    return res.sort((a, b) => b.score - a.score);
-}
-// ==STRUM-END==
-
-let isStrum = false, strumCtx = null, strumAnalyser = null, strumStream = null, strumRaf = null, strumTd = null, strumFd = null;
-// idle -> analyzing (setelah onset genjrengan) -> locked (hasil dikunci sampai genjrengan berikutnya)
-let lastStrumKey = '', lastStrumTime = 0;
-let strumState = 'idle', tOnset = 0, tLock = 0, rmsSlow = 0, chromaN = 0;
-let chromaSum = new Float32Array(12), bassVotes = new Float32Array(12);
-
-async function toggleStrum() {
-    if (isStrum) { stopStrum(); return; }
-    if (isListening) await toggleListening();
-    try {
-        strumCtx = new (window.AudioContext || window.webkitAudioContext)();
-        strumStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-        const src = strumCtx.createMediaStreamSource(strumStream);
-        const hp = strumCtx.createBiquadFilter();
-        hp.type = 'highpass'; hp.frequency.value = 70;
-        strumAnalyser = strumCtx.createAnalyser();
-        strumAnalyser.fftSize = 16384; strumAnalyser.smoothingTimeConstant = 0;
-        src.connect(hp); hp.connect(strumAnalyser);
-        strumTd = new Float32Array(strumAnalyser.fftSize);
-        strumFd = new Float32Array(strumAnalyser.frequencyBinCount);
-        strumState = 'idle'; rmsSlow = 0; lastStrumKey = '';
-        isStrum = true; keepAwake();
-        const b = document.getElementById('strumBtn');
-        b.textContent = '■ Berhenti Mode Strum'; b.classList.add('active');
-        document.getElementById('statusBox').classList.add('listening');
-        document.getElementById('statusText').textContent = 'Mode strum: genjreng satu kali, hasil terkunci sampai genjrengan berikutnya';
-        document.getElementById('hz').textContent = 'Genjreng gitar...';
-        document.getElementById('chromaBars').style.display = 'flex'; renderChromaBars(new Array(12).fill(0));
-        strumLoop();
-    } catch (err) {
-        micError(err); console.error(err);
-    }
-}
-
-function stopStrum() {
-    isStrum = false; allowSleep();
-    cancelAnimationFrame(strumRaf);
-    if (strumStream) strumStream.getTracks().forEach(t => t.stop());
-    if (strumCtx && strumCtx.state !== 'closed') strumCtx.close();
-    const b = document.getElementById('strumBtn');
-    b.textContent = '🎸 Mode Strum (Genjrengan)'; b.classList.remove('active');
-    document.getElementById('statusBox').classList.remove('listening');
-    document.getElementById('statusText').textContent = 'Mikrofon nonaktif';
-    const n = document.getElementById('note');
-    n.textContent = '—'; n.classList.remove('active-note');
-    document.getElementById('hz').textContent = '0.0 Hz';
-    document.getElementById('chromaBars').style.display = 'none';
-}
-
-function renderChromaBars(v) {
-    const mx = Math.max(...v) || 1;
-    document.getElementById('chromaBars').innerHTML = noteStrings.map((n, i) =>
-        `<div class="cb"><i style="height:${Math.round(v[i] / mx * 100)}%"></i><span>${n}</span></div>`).join('');
-}
-function pickAlt(k) {
-    if (learnable && lastObs) {
-        saveExemplar(k, lastObs);
-        document.getElementById('hz').textContent = 'Dipelajari: ' + k + ' ✓';
-        document.getElementById('note').textContent = k;
-    }
-    showChordKey(k);
-}
-function learnCurrent() { if (currentDetectedChordObj && lastObs) { saveExemplar(currentDetectedChordObj.key, lastObs); document.getElementById('hz').textContent = 'Dipelajari: ' + currentDetectedChordObj.key + ' ✓'; } }
-
-function strumLoop() {
-    if (!isStrum) return;
-    const an = strumAnalyser, noteEl = document.getElementById('note'), hzEl = document.getElementById('hz');
-    const now = performance.now(), L = strumTd.length;
-    an.getFloatTimeDomainData(strumTd);
-    let rms = 0;
-    for (let i = L - 2048; i < L; i++) rms += strumTd[i] * strumTd[i];
-    rms = Math.sqrt(rms / 2048);
-    const onset = rms > 0.02 && rms > 1.8 * rmsSlow;   // lonjakan volume = genjrengan baru
-    rmsSlow = 0.93 * rmsSlow + 0.07 * rms;
-
-    if (rms < 0.012) {                                  // hening
-        if (strumState === 'analyzing') { strumState = 'idle'; noteEl.textContent = '—'; noteEl.classList.remove('active-note'); hzEl.textContent = 'Genjreng gitar...'; }
-        else if (strumState === 'locked') { strumState = 'idle'; hzEl.textContent = 'Genjreng lagi untuk akor berikutnya'; }
-    } else if (strumState === 'idle' || (strumState === 'locked' && now - tLock > 500)) {
-        if (onset) {
-            strumState = 'analyzing'; tOnset = now; chromaN = 0;
-            chromaSum.fill(0); bassVotes.fill(0);
-            noteEl.textContent = '…'; noteEl.classList.remove('active-note'); hzEl.textContent = 'Menganalisis...';
-        }
-    } else if (strumState === 'analyzing') {
-        const dt = now - tOnset;
-        if (dt >= 350) {                                // tunggu jendela FFT bersih dari akor sebelumnya
-            an.getFloatFrequencyData(strumFd);
-            const { chroma, bass, maxMag } = computeChroma(strumFd, strumCtx.sampleRate, an.fftSize);
-            const mx = Math.max(...chroma);
-            if (mx > 0) {
-                for (let i = 0; i < 12; i++) chromaSum[i] += chroma[i] / mx;
-                chromaN++;
-                renderChromaBars(chromaSum);
-                if (bass.pc !== undefined && bass.m >= 0.3 * maxMag) bassVotes[bass.pc]++;
-            }
-            if (dt >= 650 && chromaN >= 3) {
-                let bp = -1, bv = 0;
-                bassVotes.forEach((v, i) => { if (v > bv) { bv = v; bp = i; } });
-                const bassPc = (bp >= 0 && bv >= chromaN * 0.5) ? bp : -1;
-                lastObs = Array.from(chromaSum);
-                const ranked = rankByChroma(chromaSum, bassPc);
-                strumState = 'locked'; tLock = now;
-                if (ranked.length) {
-                    let best = ranked[0];
-                    // genjrengan akor yang sama jangan berganti hanya karena selisih skor tipis
-                    if (lastStrumKey && now - lastStrumTime < 6000) {
-                        const prev = ranked.find(r => r.key === lastStrumKey);
-                        if (prev && prev.score >= best.score - 0.025) best = prev;
-                    }
-                    lastStrumKey = best.key; lastStrumTime = now;
-                    const pick = pickStrumNotes(chromaSum, bassPc >= 0 ? { pc: bassPc, m: 1 } : { m: 0 }, 1);
-                    detectedNotesList = pick ? pick.names : [];
-                    renderDetectedList();
-                    currentCandidates = ranked.slice(0, 6).map(r => r.key);
-                    learnable = true;
-                    showChordKey(best.key);
-                    noteEl.textContent = best.key;
-                    noteEl.classList.add('active-note');
-                    hzEl.textContent = 'Akor terkunci: ' + chordDatabase[best.key].notes.join(' - ');
-                }
-            }
-        }
-    }
-    strumRaf = requestAnimationFrame(strumLoop);
-}
-try { initPicker(); } catch (e) { console.error(e); if (window.pcShow) window.pcShow('Gagal memuat data akor: ' + e.message); }
-    </script>
 </body>
 </html>
