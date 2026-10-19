@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#090a0f">
+    <meta name="color-scheme" content="dark">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Pitchcraft — Ultimate Guitar Chord Master</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +17,13 @@
             --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--radius:20px;
         }
         *{box-sizing:border-box;margin:0;padding:0}
-        html{-webkit-text-size-adjust:100%}
-        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text-main);min-height:100vh;line-height:1.5;
+        html{-webkit-text-size-adjust:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+        html,body{max-width:100%;overflow-x:hidden}
+        body{-webkit-tap-highlight-color:transparent}
+        button,select,input,label{touch-action:manipulation}
+        body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--text-main);min-height:100vh;min-height:100dvh;line-height:1.5;
             background:radial-gradient(900px 420px at 50% -10%,rgba(139,92,246,.18),transparent),var(--bg);
-            padding:1.25rem 1rem 3rem}
+            padding:calc(1.25rem + env(safe-area-inset-top,0px)) calc(1rem + env(safe-area-inset-right,0px)) calc(3rem + env(safe-area-inset-bottom,0px)) calc(1rem + env(safe-area-inset-left,0px))}
         .topbar{max-width:720px;margin:0 auto 1.25rem}
         .brand{display:flex;align-items:center;gap:12px}
         .logo-mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;color:#fff;
@@ -98,8 +104,8 @@
 
         /* Fretboard */
         .fretboard-box-h{display:inline-block;background:#0d0f17;border:1px solid var(--surface-border);border-radius:12px;
-            padding:14px;margin-top:.6rem;overflow-x:auto;max-width:100%}
-        .fretboard-h-grid{display:grid;grid-template-columns:32px repeat(5,46px);grid-template-rows:24px repeat(6,30px);align-items:center}
+            padding:14px;margin-top:.6rem;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+        .fretboard-h-grid{--cw:46px;--rh:30px;display:grid;grid-template-columns:32px repeat(5,var(--cw));grid-template-rows:24px repeat(6,var(--rh));align-items:center}
         .h-string-label{font-size:.8rem;font-weight:700;color:#c4b5fd;display:flex;align-items:center;gap:4px}
         .h-fret-header{font-size:.72rem;font-weight:700;color:var(--text-muted);text-align:center}
         .h-fret-cell{position:relative;border-top:2px solid rgba(255,255,255,.15);border-right:2px solid rgba(255,255,255,.15);
@@ -117,11 +123,43 @@
             display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
         .saved-item-left{display:flex;flex-direction:column;gap:2px;flex:1 1 280px;min-width:0}
         .saved-item-title{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700;color:#c4b5fd}
+        /* ===== Android / layar sentuh ===== */
+        button{min-height:44px}
+        .btn-variant,.btn-delete-saved{min-height:40px;display:inline-flex;align-items:center;justify-content:center}
+        .picker-row select{min-height:44px}
+        .picker-row input[type=number]{min-height:44px}
+        .picker-row input[type=checkbox]{width:20px;height:20px;accent-color:var(--primary)}
+        .picker-row label{min-height:44px}
+        .badge{min-height:34px}
+        .badge span{display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:28px;margin:-4px -6px -4px 0}
+        @media (pointer:coarse){
+            select,input[type=number]{font-size:16px!important}   /* cegah Chrome Android zoom otomatis saat fokus */
+            .btn-variant{padding:8px 14px}
+        }
         @media (max-width:520px){
-            body{padding:1rem .75rem 2.5rem}
+            body{padding:calc(1rem + env(safe-area-inset-top,0px)) calc(.75rem + env(safe-area-inset-right,0px)) calc(2.5rem + env(safe-area-inset-bottom,0px)) calc(.75rem + env(safe-area-inset-left,0px))}
+            .topbar{margin-bottom:1rem}
+            h1{font-size:1.15rem}
+            .fretboard-box-h{padding:10px}
+            .fretboard-h-grid{--cw:42px;--rh:30px;grid-template-columns:30px repeat(5,var(--cw))}
+            .action-row button{flex:1 1 100%}
+            .picker-row select{flex:1 1 calc(50% - 4px)}
+            .picker-row .btn-variant{flex:1 1 calc(50% - 4px)}
+            .saved-item-left{flex-basis:100%}
+            .saved-item-card>div:last-child{width:100%}
+            .saved-item-card>div:last-child button{flex:1}
+            .alt-row .btn-variant{min-height:38px}
             .card{padding:1.2rem 1rem}
             .note-display{font-size:3.8rem}
             .saved-item-card>div:last-child{flex-direction:row!important}
+        }
+        @media (max-width:360px){
+            .fretboard-h-grid{--cw:36px;--rh:28px;grid-template-columns:28px repeat(5,var(--cw))}
+            .finger-dot-h{width:20px;height:20px}
+            .note-display{font-size:3.2rem}
+        }
+        @media (max-height:480px) and (orientation:landscape){
+            .container{max-width:900px}
         }
         @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
     .btn-secondary.active{background:var(--danger);border-color:var(--danger);color:#fff}
@@ -250,7 +288,23 @@
             MAX_FREQ: 400
         };
 
-        let audioContext = null;
+        function micError(err) {
+    const n = err && err.name;
+    if (n === 'NotAllowedError' || n === 'SecurityError') alert('Izin mikrofon ditolak. Di Chrome Android: ketuk ikon gembok di address bar → Izin → Mikrofon → Izinkan, lalu muat ulang.');
+    else if (n === 'NotFoundError') alert('Mikrofon tidak ditemukan di perangkat ini.');
+    else if (!window.isSecureContext || (err && err.message === 'nomic')) alert('Mikrofon hanya bisa dipakai lewat HTTPS (atau localhost). Buka halaman ini lewat alamat https://.');
+    else alert('Gagal mengakses mikrofon.');
+}
+// Jaga layar tetap menyala saat mikrofon aktif (Android mematikan layar & menghentikan mic)
+let wakeLock = null, tunerStream = null;
+async function keepAwake() {
+    try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+}
+function allowSleep() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && (isListening || isStrum) && !wakeLock) keepAwake();
+});
+let audioContext = null;
         let analyser = null;
         let microphone = null;
         let biquadFilter = null;
@@ -405,7 +459,9 @@ function noteFromPitch(frequency) {
                 if (isStrum) stopStrum();
                 try {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomic');
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+                    tunerStream = stream;
                     
                     microphone = audioContext.createMediaStreamSource(stream);
                     biquadFilter = audioContext.createBiquadFilter();
@@ -418,7 +474,7 @@ function noteFromPitch(frequency) {
                     microphone.connect(biquadFilter);
                     biquadFilter.connect(analyser);
 
-                    isListening = true;
+                    isListening = true; keepAwake();
                     pitchHistory = [];
                     
                     btn.textContent = "Berhenti";
@@ -428,13 +484,14 @@ function noteFromPitch(frequency) {
                     
                     updatePitch();
                 } catch (err) {
-                    alert('Gagal mengakses mikrofon.');
+                    micError(err);
                     console.error(err);
                 }
             } else {
+                if (tunerStream) { tunerStream.getTracks().forEach(t => t.stop()); tunerStream = null; }
                 if (audioContext && audioContext.state !== 'closed') audioContext.close();
                 cancelAnimationFrame(animationId);
-                isListening = false;
+                isListening = false; allowSleep();
                 
                 btn.textContent = "Mulai Mendengarkan";
                 btn.classList.remove('active');
@@ -960,7 +1017,7 @@ async function toggleStrum() {
         strumTd = new Float32Array(strumAnalyser.fftSize);
         strumFd = new Float32Array(strumAnalyser.frequencyBinCount);
         strumState = 'idle'; rmsSlow = 0; lastStrumKey = '';
-        isStrum = true;
+        isStrum = true; keepAwake();
         const b = document.getElementById('strumBtn');
         b.textContent = '■ Berhenti Mode Strum'; b.classList.add('active');
         document.getElementById('statusBox').classList.add('listening');
@@ -969,12 +1026,12 @@ async function toggleStrum() {
         document.getElementById('chromaBars').style.display = 'flex'; renderChromaBars(new Array(12).fill(0));
         strumLoop();
     } catch (err) {
-        alert('Gagal mengakses mikrofon.'); console.error(err);
+        micError(err); console.error(err);
     }
 }
 
 function stopStrum() {
-    isStrum = false;
+    isStrum = false; allowSleep();
     cancelAnimationFrame(strumRaf);
     if (strumStream) strumStream.getTracks().forEach(t => t.stop());
     if (strumCtx && strumCtx.state !== 'closed') strumCtx.close();
