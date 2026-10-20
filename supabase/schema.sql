@@ -40,6 +40,17 @@ create table public.settings (
   updated_at     timestamptz not null default now()
 );
 
+create table public.misses (
+  user_id     uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  id          text not null check (char_length(id) <= 80),
+  want        text not null check (char_length(want) <= 20),   -- akor yang diminta
+  got         text not null check (char_length(got) <= 20),    -- akor yang terbaca
+  happened_at timestamptz not null,
+  created_at  timestamptz not null default now(),              -- waktu server (kursor sinkron)
+  primary key (user_id, id)
+);
+create index misses_user_created on public.misses (user_id, created_at);
+
 -- waktu server menjadi penentu "terbaru", bukan jam perangkat
 create or replace function public.set_updated_at() returns trigger
 language plpgsql set search_path = '' as $$
@@ -55,12 +66,15 @@ alter table public.sessions enable row level security;
 alter table public.badges   enable row level security;
 alter table public.songs    enable row level security;
 alter table public.settings enable row level security;
+alter table public.misses   enable row level security;
 
 -- sesi & lencana hanya bertambah (tanpa update/hapus dari klien)
 create policy sessions_select on public.sessions for select using ((select auth.uid()) = user_id);
 create policy sessions_insert on public.sessions for insert with check ((select auth.uid()) = user_id);
 create policy badges_select   on public.badges   for select using ((select auth.uid()) = user_id);
 create policy badges_insert   on public.badges   for insert with check ((select auth.uid()) = user_id);
+create policy misses_select on public.misses for select using ((select auth.uid()) = user_id);
+create policy misses_insert on public.misses for insert with check ((select auth.uid()) = user_id);
 create policy songs_all       on public.songs    for all using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy settings_all    on public.settings for all using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 

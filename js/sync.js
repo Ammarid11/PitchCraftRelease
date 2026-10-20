@@ -44,7 +44,7 @@ async function syncDoc(db, uid, kind, st) {
         if (!remote) {
             if (!meaningful) return;
             const id = kind === 'song' ? (rec.id || newId()) : uid;
-            const row = kind === 'song' ? { id, user_id: uid, data: local } : { user_id: uid, data: local, schema_version: 1 };
+            const row = kind === 'song' ? { id, user_id: uid, data: local } : { user_id: uid, data: local, schema_version: typeof SETTINGS_V !== 'undefined' ? SETTINGS_V : 1 };
             let ua; try { ua = await db.insertDoc(kind, row); } catch (e) { if (e && e.code === '23505') continue; throw e; }   // perangkat lain baru saja mengisi: ulangi sebagai pembaruan
             if (kind === 'song') rec.id = id;
             rec.base = ua; rec.hash = lh; return;
@@ -97,6 +97,22 @@ async function syncOnce(db, uid) {
     if (missing.length) await db.upsertBadges(missing.map(b => ({ user_id: uid, badge_id: b })));
     remoteB.forEach(b => localB.add(b)); lsSet('pc_badges', [...localB]);
     st.bd = hashStr([...localB].sort().join(',')); setSync(st);
+    // 2b) catatan akor salah: append-only seperti sesi (kursor waktu server), simpan 300 terbaru di perangkat
+    const ms = getMisses(), mby = new Map(ms.map(m => [m.id, m]));
+    const msince = st.mcur ? new Date(Date.parse(st.mcur) - 120000).toISOString() : '1970-01-01T00:00:00.000Z';
+    let mmax = st.mcur ? Date.parse(st.mcur) : 0;
+    (await db.missesSince(msince)).forEach(r => {
+        const t = Date.parse(r.created_at); if (t > mmax) mmax = t;
+        const c = cleanMiss(r); if (!c) return;
+        if (mby.has(c.id)) mby.get(c.id).s = 1; else { c.s = 1; ms.push(c); mby.set(c.id, c); }
+    });
+    const mun = ms.filter(m => !m.s);
+    for (let i = 0; i < mun.length; i += 200) {
+        const chunk = mun.slice(i, i + 200);
+        await db.upsertMisses(chunk.map(m => ({ id: m.id, user_id: uid, want: m.want, got: m.got, happened_at: new Date(m.t).toISOString() })));
+        chunk.forEach(m => { m.s = 1; });
+    }
+    ms.sort((a, b) => a.t - b.t); setMisses(ms.slice(-300)); if (mmax) st.mcur = new Date(mmax).toISOString(); setSync(st);
     // 3) lagu dan pengaturan
     await syncDoc(db, uid, 'song', st); setSync(st);
     await syncDoc(db, uid, 'settings', st);
@@ -107,6 +123,7 @@ async function syncOnce(db, uid) {
 function hasLocalChanges() {
     const st = getSync(); if (!st.at) return true;
     if (getSessions().some(s => !s.s)) return true;
+    if (getMisses().some(m => !m.s)) return true;
     if (hashStr([...new Set(lsGet('pc_badges', []))].sort().join(',')) !== st.bd) return true;
     const s1 = st.song || {}, s2 = st.settings || {};
     const sh = hashStr(canon(docLocal('song')));
@@ -152,6 +169,14 @@ function dbReal(uid) {
             } return out;
         },
         async upsertSessions(rows) { ck(await sb.from('sessions').upsert(rows, { onConflict: 'user_id,id', ignoreDuplicates: true })); },
+        async missesSince(cursor) {
+            const out = []; for (let from = 0; ; from += 1000) {
+                const d = ck(await sb.from('misses').select('id,want,got,happened_at,created_at').gt('created_at', cursor)
+                    .order('created_at', { ascending: true }).order('id', { ascending: true }).range(from, from + 999));
+                out.push(...d); if (d.length < 1000) break;
+            } return out;
+        },
+        async upsertMisses(rows) { ck(await sb.from('misses').upsert(rows, { onConflict: 'user_id,id', ignoreDuplicates: true })); },
         async badgesAll() { return ck(await sb.from('badges').select('badge_id')).map(r => r.badge_id); },
         async upsertBadges(rows) { ck(await sb.from('badges').upsert(rows, { onConflict: 'user_id,badge_id', ignoreDuplicates: true })); }
     };
@@ -172,7 +197,7 @@ async function sbLoad() {
 }
 
 function wipeLocal() {
-    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
+    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog', 'pc_miss'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
     song = { name: '', meter: '4/4', sections: [newSection()] }; progression = [];
     try { renderSong(); renderProgression(); renderStreak(); } catch (e) { }
 }
@@ -269,7 +294,7 @@ async function acctDelete() {
 /* ---------- Cadangan manual (.json) ---------- */
 function acctExport() {
     const data = { format: 'pitchcraft-progress', v: 1, exported: new Date().toISOString(),
-        sessions: getSessions().map(s => { const c = Object.assign({}, s); delete c.s; return c; }), badges: lsGet('pc_badges', []), song, settings: settingsData() };
+        sessions: getSessions().map(s => { const c = Object.assign({}, s); delete c.s; return c; }), badges: lsGet('pc_badges', []), misses: getMisses().map(m => ({ id: m.id, t: m.t, want: m.want, got: m.got })), song, settings: settingsData() };
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
     a.download = 'pitchcraft-progres-' + dayKey(new Date()) + '.json';
@@ -279,6 +304,9 @@ function importProgress(d) {
     const ss = getSessions(), have = new Set(ss.map(s => s.id)); let n = 0;
     (Array.isArray(d.sessions) ? d.sessions : []).slice(0, 5000).forEach(r => { const c = cleanSession(r); if (c && !have.has(c.id)) { ss.push(c); have.add(c.id); n++; } });
     setSessions(ss);
+    const ms = getMisses(), mh = new Set(ms.map(m => m.id));
+    (Array.isArray(d.misses) ? d.misses : []).slice(0, 2000).forEach(r => { const c = cleanMiss(r); if (c && !mh.has(c.id)) { ms.push(c); mh.add(c.id); } });
+    ms.sort((a, b) => a.t - b.t); setMisses(ms.slice(-300));
     const known = knownBadges(), bg = new Set(lsGet('pc_badges', []));
     (Array.isArray(d.badges) ? d.badges : []).forEach(b => { if (known.has(b)) bg.add(b); }); lsSet('pc_badges', [...bg]);
     if (d.song && Array.isArray(d.song.sections) && confirm('Ganti lagu yang sedang aktif dengan lagu dari file?')) { song = cleanSong(d.song); if (!song.sections.length) song.sections = [newSection()]; renderSong(); }

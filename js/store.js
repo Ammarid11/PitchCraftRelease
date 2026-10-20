@@ -23,6 +23,21 @@ function cleanSession(s) {
     return { id: s.id, mode: String(s.mode || '').slice(0, 20), level: String(s.level || '').slice(0, 20), dur: n(s.dur, 7200) | 0, ok: n(s.ok, 10000) | 0, bad: n(s.bad, 10000) | 0, cpm: Math.round(n(s.cpm, 1000) * 10) / 10, played_at: t.toISOString(), day };
 }
 
+// Catatan akor salah (dasar "Latih yang lemah"): hanya bertambah, ber-ID, maks. 300 di perangkat. s:1 = sudah ada di server.
+const getMisses = () => {
+    const a = lsGet('pc_miss', []); if (!Array.isArray(a)) return [];
+    let ch = false; a.forEach(e => { if (e && !e.id) { e.id = newId(); ch = true; } });   // catatan versi lama belum punya ID
+    if (ch) lsSet('pc_miss', a);
+    return a.filter(e => e && e.id);
+};
+const setMisses = a => lsSet('pc_miss', a);
+function cleanMiss(s) {   // dari perangkat (t = ms) atau dari server (happened_at)
+    if (!s || typeof s.id !== 'string' || !s.id || s.id.length > 80) return null;
+    const t = s.t !== undefined ? +s.t : Date.parse(s.happened_at); if (!isFinite(t) || t <= 0) return null;
+    const want = String(s.want || '').slice(0, 20), got = String(s.got || '').slice(0, 20); if (!want || !got) return null;
+    return { id: s.id, t, want, got };
+}
+
 // Migrasi sekali: jumlah-per-hari versi lama (pc_days) -> satu sesi sintetis per tanggal dengan ID tetap "legacy-TANGGAL"
 function migrateLegacy() {
     if (lsGet('pc_migr2', 0)) return;

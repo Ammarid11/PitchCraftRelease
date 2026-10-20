@@ -9,7 +9,7 @@ let fails = 0; const ok = (c, m) => { console.log((c ? 'LULUS  ' : 'GAGAL  ') + 
 function makeServer() {
     let clock = Date.parse('2026-10-20T00:00:00Z');
     const tick = () => new Date(clock += 1000).toISOString();
-    const S = { sessions: new Map(), badges: new Set(), songs: new Map(), settings: null, calls: [] };
+    const S = { sessions: new Map(), badges: new Set(), misses: new Map(), songs: new Map(), settings: null, calls: [] };
     S.db = {
         async getDoc(kind, id) { S.calls.push('get:' + kind); return kind === 'song' ? (id ? S.songs.get(id) : [...S.songs.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]) || null : S.settings; },
         async insertDoc(kind, row) {
@@ -24,6 +24,8 @@ function makeServer() {
         },
         async sessionsSince(cur) { return [...S.sessions.values()].filter(r => Date.parse(r.created_at) > Date.parse(cur)); },
         async upsertSessions(rows) { S.calls.push('sessions:' + rows.length); const t = tick(); rows.forEach(r => { if (!S.sessions.has(r.id)) S.sessions.set(r.id, Object.assign({}, r, { created_at: t })); }); },
+        async missesSince(cur) { return [...S.misses.values()].filter(r => Date.parse(r.created_at) > Date.parse(cur)); },
+        async upsertMisses(rows) { S.calls.push('misses:' + rows.length); const t = tick(); rows.forEach(r => { if (!S.misses.has(r.id)) S.misses.set(r.id, Object.assign({}, r, { created_at: t })); }); },
         async badgesAll() { return [...S.badges]; },
         async upsertBadges(rows) { rows.forEach(r => S.badges.add(r.badge_id)); }
     };
@@ -114,6 +116,17 @@ function makeDevice() {
     S.db.updateDoc = async (...a) => { if (!hijacked) { hijacked = true; const r = [...S.songs.values()][0]; r.data = { name: 'T', meter: '4/4', sections: [{ name: 'Bait', lyrics: '[X]dari B', chords: [] }] }; r.updated_at = '2030-01-01T00:00:00.000Z'; } return orig(...a); };
     await A.sync(S);
     ok(A.songText() === '[X]dari B' && A.store.pc_conflicts, 'balapan terdeteksi: versi server dipakai, edit lokal disimpan sebagai konflik');
+
+    // 11. catatan akor salah: A mencatat, B menerima; tidak ganda, tidak dikirim ulang
+    S = makeServer(); A = makeDevice(); B = makeDevice();
+    A.run("setMisses([{ id: 'm1', t: 1760000000000, want: 'Am', got: 'C' }, { id: 'm2', t: 1760000001000, want: 'Am', got: 'C' }])");
+    await A.sync(S); await B.sync(S); await A.sync(S);
+    ok(S.misses.size === 2 && B.run('getMisses().length') === 2 && A.run('getMisses().length') === 2, 'catatan akor salah sampai ke server dan perangkat B tanpa ganda');
+    S.calls.length = 0; await A.sync(S); await B.sync(S);
+    ok(!S.calls.some(c => c.startsWith('misses:')), 'catatan yang sudah di server tidak dikirim ulang');
+    A.run("setMisses(Array.from({ length: 350 }, (_, i) => ({ id: 'x' + i, t: 1760000100000 + i, want: 'G', got: 'D' })))"); await A.sync(S);
+    ok(A.run('getMisses().length') === 300 && S.misses.size === 352, 'perangkat menyimpan 300 terbaru, server menyimpan semuanya');
+    ok(D.run("cleanMiss({ id: 'a', t: 1, want: '', got: 'C' })") === null, 'catatan salah tidak valid ditolak');
 
     console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes sinkron lulus'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -2,6 +2,9 @@
 
 const PC_KEY = 'pc_settings';
 let pcLoading = false;
+// Versi format pengaturan. Saat format berubah: naikkan SETTINGS_V dan tambah fungsi di SETTINGS_MIGRATIONS[versi_lama] yang mengembalikan objek versi baru.
+const SETTINGS_V = 1, SETTINGS_MIGRATIONS = {};
+function migrateSettings(s) { let v = +s.v || 1; while (SETTINGS_MIGRATIONS[v]) { s = SETTINGS_MIGRATIONS[v](s) || s; s.v = ++v; } return s; }
 const byId = id => document.getElementById(id);
 
 // Kontrol yang muncul di dua tab (BPM, metronom, hitung mundur, birama) ditandai data-sync dan dijaga sama
@@ -11,7 +14,7 @@ function syncVals(k, v) {
 
 function collectSettings() {
     return {
-        v: 1, progression, song,
+        v: SETTINGS_V, progression, song,
         bpm: +byId('bpm').value || 80, metro: byId('metroChk').checked, count: document.querySelector('[data-sync="cnt"]').checked,
         pat: strumPatSel, tuning: byId('tunSel').value, keyRoot: byId('keyRoot').value, keyMode: byId('keyMode').value, capo: byId('capoSel').value,
         lefty: document.body.classList.contains('lefty'), autoRec: byId('autoRec').checked,
@@ -30,6 +33,7 @@ function loadSettings() {
     let s = null;
     try { s = JSON.parse(localStorage.getItem(PC_KEY) || 'null'); } catch (e) { }
     if (!s || typeof s !== 'object') return;
+    s = migrateSettings(s);
     pcLoading = true;
     try {
         if (Array.isArray(s.progression)) progression = s.progression.filter(p => p && chordDatabase[p.key]).map(p => ({ key: p.key, v: Math.min(Math.max(0, p.v | 0), chordDatabase[p.key].variants.length - 1) }));

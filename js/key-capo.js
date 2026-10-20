@@ -46,7 +46,7 @@ const kpWide = () => window.matchMedia('(min-width:1280px)').matches;
 function kpSummary() {
     const m = document.getElementById('keyMode').value, capo = getCapo();
     const t = 'Kunci ' + noteStrings[+document.getElementById('keyRoot').value] + (m === 'min' ? 'm' : '') + ' · ' + (capo ? 'Capo ' + capo : 'tanpa capo');
-    document.getElementById('keyPill').textContent = '🎼 ' + t;
+    document.getElementById('keyPill').textContent = '🎼 ' + t.replace(' · tanpa capo', '');
     document.getElementById('kpSum').textContent = t;
 }
 

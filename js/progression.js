@@ -7,7 +7,7 @@ const curMeter = () => METERS[song.meter] || METERS['4/4'];
 
 function addToProgression() {
     if (!currentDetectedChordObj) { alert('Pilih atau deteksi akor dulu.'); return; }
-    progression.push({ key: currentDetectedChordObj.key, v: activeVariantIndex });
+    progression.push({ key: currentDetectedChordObj.key, v: activeVariantIndex }); pcToast('Ditambahkan ke Progresi: ' + currentDetectedChordObj.key);
     renderProgression();
 }
 
@@ -16,7 +16,7 @@ function renderProgression() {
     const el = document.getElementById('progList'), capo = getCapo();
     el.innerHTML = progression.length
         ? progression.map((p, i) => `<div class="badge">${p.key}${capo ? ` <small>→ ${tKey(p.key, capo)}</small>` : ''} <span onclick="progression.splice(${i},1);renderProgression()">&times;</span></div>`).join('')
-        : '<span class="empty-list">Belum ada progresi.</span>';
+        : '<span class="empty-list">Belum ada progresi. Tekan “➕ Tambah Akor Saat Ini”, atau pilih progresi populer di panel 🎼 Kunci.</span>';
     saveSettings();
 }
 

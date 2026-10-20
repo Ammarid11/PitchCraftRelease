@@ -6,11 +6,11 @@ const LEVELS = {
     barre: ['F', 'Bm', 'F#m', 'A#', 'B', 'Cm', 'C#m', 'Gm', 'Fm', 'G#'],
     seventh: ['A7', 'D7', 'E7', 'G7', 'B7', 'Cmaj7', 'Dmaj7', 'Fmaj7', 'Em7', 'Am7', 'Dsus4', 'Asus2']
 };
-const MODE_LABEL = { drill: 'Pindah akor', quiz: 'Kuis kunci', level: 'Kuis tingkat' };
+const MODE_LABEL = { drill: 'Pindah akor', quiz: 'Kuis kunci', level: 'Kuis tingkat', weak: 'Latih lemah' };
 
 function loadHist() { try { const h = JSON.parse(localStorage.getItem('pc_hist') || '[]'); return Array.isArray(h) ? h : []; } catch (e) { return []; } }
 function saveHist(h) { try { localStorage.setItem('pc_hist', JSON.stringify(h.slice(-30))); } catch (e) { } }
-function clearHist() { if (confirm('Hapus semua riwayat latihan?')) { saveHist([]); renderHist(); } }
+function clearHist() { if (confirm('Hapus semua riwayat latihan?')) { saveHist([]); try { localStorage.removeItem('pc_miss'); } catch (e) { } renderHist(); } }
 
 function renderHist() {
     const el = document.getElementById('drillHist'); if (!el) return;
@@ -18,14 +18,32 @@ function renderHist() {
     if (!h.length) { el.textContent = 'Belum ada riwayat latihan.'; return; }
     const lab = e => MODE_LABEL[e.mode] + (e.mode === 'level' ? ' ' + e.level : ''), best = h.reduce((a, b) => b.cpm > a.cpm ? b : a);
     el.innerHTML = `🏆 Rekor: <strong>${best.cpm} akor/menit</strong> (${lab(best)}, ${best.dur} dtk)<br>` +
-        h.slice(-5).reverse().map(e => `${new Date(e.t).toLocaleDateString('id-ID')} · ${lab(e)} · ${e.dur} dtk · benar ${e.ok}/${e.ok + e.bad} · ${e.cpm} akor/mnt`).join('<br>');
+        h.slice(-5).reverse().map(e => `${new Date(e.t).toLocaleDateString('id-ID')} · ${lab(e)} · ${e.dur} dtk · benar ${e.ok}/${e.ok + e.bad} · ${e.cpm} akor/mnt`).join('<br>') + (weakPool().length ? '<br>Paling sering salah: ' + weakPool().join(', ') : '');
+}
+
+// Catatan salah per kejadian (lokal, maks. 300): dasar mode "Latih yang lemah"
+const DRILL_HELP = {
+    drill: 'Genjreng akor-akor di Progresi bergantian sesuai urutan. Tambahkan minimal 2 akor berbeda ke Progresi dulu.',
+    quiz: 'Akor acak dari kunci yang dipilih di panel 🎼 Kunci.',
+    level: 'Akor acak menurut tingkat. Capai minimal 8 benar dan benar 2× lebih banyak dari salah untuk membuka lencana tingkat.',
+    weak: 'Berlatih akor yang paling sering kamu salah. Butuh catatan kesalahan dari latihan sebelumnya.'
+};
+function drillHelp() {
+    const m = document.getElementById('drillMode').value;
+    document.getElementById('drillHelp').textContent = DRILL_HELP[m] || '';
+    document.getElementById('drillLevel').disabled = m !== 'level';   // tingkat hanya dipakai mode "menurut tingkat"
+}
+function logMiss(want, got) { const a = getMisses(); a.push({ id: newId(), t: Date.now(), want, got }); setMisses(a.slice(-300)); if (window.pcSyncSoon) window.pcSyncSoon(); }
+function weakPool() {
+    const c = {}; getMisses().forEach(e => { if (e && chordDatabase[e.want]) c[e.want] = (c[e.want] || 0) + 1; });
+    return Object.keys(c).sort((a, b) => c[b] - c[a]).slice(0, 6);
 }
 
 function pcLock(key) {
     const sk = tKey(key, -getCapo());   // akor terdengar -> bentuk jari
     if (document.getElementById('autoRec').checked && (!progression.length || progression[progression.length - 1].key !== sk)) { progression.push({ key: sk, v: 0 }); renderProgression(); }
     if (!dr) return;
-    if (key === dr.target) { dr.ok++; drillNext(); } else { dr.bad++; document.getElementById('drillInfo').textContent = `Terbaca ${key}, coba lagi · benar ${dr.ok}, salah ${dr.bad}`; }
+    if (key === dr.target) { dr.ok++; drillNext(); } else { dr.bad++; logMiss(dr.target, key); document.getElementById('drillInfo').textContent = `Terbaca ${key}, coba lagi · benar ${dr.ok}, salah ${dr.bad}`; }
 }
 
 function drillNext() {
@@ -33,13 +51,14 @@ function drillNext() {
     if (dr.mode === 'drill') dr.i = (dr.i + 1) % pool.length;
     else { let n; do { n = Math.floor(Math.random() * pool.length); } while (pool.length > 1 && n === dr.i); dr.i = n; }
     dr.target = pool[dr.i];
-    document.getElementById('drillTarget').textContent = dr.target;
+    document.getElementById('drillTarget').textContent = dr.target; drillShowFret(dr.target);
     document.getElementById('drillInfo').textContent = `Genjreng ${dr.target} · benar ${dr.ok}, salah ${dr.bad}`;
 }
 
 async function drillStart() {
     const mode = document.getElementById('drillMode').value, level = document.getElementById('drillLevel').value, dur = +document.getElementById('drillDur').value || 60;
-    const pool = mode === 'drill' ? progression.map(p => tKey(p.key, getCapo())) : mode === 'level' ? (LEVELS[level] || LEVELS.dasar).slice() : keyChords().map(c => noteStrings[c.r] + c.q);
+    const pool = mode === 'weak' ? weakPool() : mode === 'drill' ? progression.map(p => tKey(p.key, getCapo())) : mode === 'level' ? (LEVELS[level] || LEVELS.dasar).slice() : keyChords().map(c => noteStrings[c.r] + c.q);
+    if (mode === 'weak' && pool.length < 2) { alert('Belum cukup catatan kesalahan. Latih dulu lewat mode lain; akor yang sering salah akan muncul di sini.'); return; }
     if (mode === 'drill' && new Set(pool).size < 2) { alert('Tambahkan minimal 2 akor berbeda ke Progresi dulu.'); return; }
     if (!isStrum) await toggleStrum();
     if (!isStrum) return;
@@ -53,9 +72,17 @@ async function drillStart() {
             const cpm = Math.round(dr.ok / dr.dur * 600) / 10, h = loadHist();
             h.push({ t: Date.now(), mode: dr.mode, level: dr.level, dur: dr.dur, ok: dr.ok, bad: dr.bad, cpm }); saveHist(h);
             document.getElementById('drillInfo').textContent = `Selesai! Benar ${dr.ok}, salah ${dr.bad} · ${cpm} akor/menit`;
-            document.getElementById('drillTarget').textContent = '🏁'; dr = null; clearInterval(drTimer); renderHist();
+            document.getElementById('drillTarget').textContent = '🏁'; drillShowFret(''); dr = null; clearInterval(drTimer); renderHist();
         } else document.getElementById('drillInfo').textContent = `${left} dtk · genjreng ${dr.target} · benar ${dr.ok}, salah ${dr.bad}`;
     }, 500);
 }
 
-function drillStop() { dr = null; clearInterval(drTimer); document.getElementById('drillTarget').textContent = '—'; document.getElementById('drillInfo').textContent = 'Dihentikan (skor tidak disimpan).'; }
+function drillStop() { dr = null; clearInterval(drTimer); document.getElementById('drillTarget').textContent = '—'; drillShowFret(''); document.getElementById('drillInfo').textContent = 'Dihentikan (skor tidak disimpan).'; }
+
+// Diagram fret untuk akor yang diminta. Target = akor yang TERDENGAR; yang digambar = bentuk jarinya (dikurangi capo).
+function drillShowFret(key) {
+    const el = document.getElementById('drillFret'); if (!el) return;
+    const capo = getCapo(), shape = key ? tKey(key, -capo) : '', ch = key ? (chordDatabase[shape] || chordDatabase[key]) : null;
+    if (!ch) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="chord-detail-row" style="margin-top:8px">${esc(ch.name)} · nada: <strong>${ch.notes.join(' - ')}</strong>${capo ? `<br>Capo ${capo}: mainkan bentuk <strong>${esc(ch.key)}</strong>` : ''}</div>${fretboardHTML(ch.variants[0].fingering)}`;
+}

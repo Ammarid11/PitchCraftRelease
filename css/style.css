@@ -1226,3 +1226,42 @@ h1 { background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip:
 .ac-idi { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; background: rgba(255,255,255,.06); font-size: 1rem; }
 .ac-idi svg { width: 16px; height: 16px; }
 .ac-bind { margin-top: 10px; }
+
+/* ===== Tip tiap tab & panel Bantuan ===== */
+.tip { max-width: 720px; margin: 0 auto 1rem; display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.35); font-size: .8rem; color: #ddd6fe; }
+.tip[hidden] { display: none; }
+.tip b { display: block; color: #fff; margin-bottom: 2px; }
+.tip a { color: #c4b5fd; white-space: nowrap; }
+.tip button { flex: 0 0 auto; margin-left: auto; min-height: 34px; padding: 4px 12px; font-size: .75rem; background: rgba(255,255,255,.08); color: var(--text-main); border: 1px solid var(--surface-border); border-radius: 999px; }
+#helpBtn { margin-left: 0; }
+.hl-item { padding: 10px 12px; margin-bottom: 8px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--surface-border); }
+.hl-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hl-item p { font-size: .8rem; color: var(--text-muted); margin-top: 4px; }
+select:disabled { opacity: .45; }
+
+/* ===== Rapikan tata letak ===== */
+.topbar .brand { flex: 1 1 100%; }
+.topbar .keypill { flex: 1 1 0; min-width: 0; margin-left: 0; padding: 6px 10px; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 521px) {
+    .topbar .brand { flex: 1 1 auto; }
+    .topbar .keypill { flex: 0 0 auto; }
+    .topbar .brand + .keypill { margin-left: auto; }
+}
+.field-label { display: block; }
+.picker-row.stack #drillMode { flex: 1 1 100%; }
+.picker-row.stack select { flex: 1 1 calc(50% - 4px); }
+.picker-row.stack .btn-variant { flex: 1 1 calc(50% - 4px); }
+.badges { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.badges::-webkit-scrollbar { display: none; }
+.bdg { flex: 0 0 auto; white-space: nowrap; }
+#tunStrings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-items: stretch; }
+#tunStrings .badge { justify-content: center; min-height: 40px; }
+.note-display:not(.active-note) { color: var(--text-muted); }
+.lib-act button { white-space: nowrap; padding: 4px 6px; font-size: .75rem; }
+.card .picker-row + .field-label { margin-top: 14px; }
+
+/* ===== Pemilih akor dari Kamus (Progresi & Lagu) ===== */
+#pick { z-index: 76; }
+.pk-box { max-width: 560px; }
+.pk-box .lib-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.pk-box .btn-primary { margin-top: 14px; }

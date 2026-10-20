@@ -192,7 +192,7 @@ function saveCurrentChord() {
 
     let exists = savedChordsList.some(item => item.name === chordToSave.name && item.variant.desc === chordToSave.variant.desc);
     if (!exists) {
-        savedChordsList.push(chordToSave);
+        savedChordsList.push(chordToSave); pcToast('Disimpan: ' + chordToSave.name + ' (lihat di tab Progresi)');
         renderSavedChords();
     } else {
         alert("Variasi akor ini sudah ada di dalam daftar tersimpan!");
@@ -208,7 +208,7 @@ function renderSavedChords() {
     try { localStorage.setItem('pc_saved', JSON.stringify(savedChordsList)); } catch (e) { }
     const container = document.getElementById('savedChordsContainer');
     if (savedChordsList.length === 0) {
-        container.innerHTML = `<span class="empty-list">Belum ada akor yang disimpan.</span>`;
+        container.innerHTML = `<span class="empty-list">Belum ada akor tersimpan. Tampilkan sebuah akor di tab Deteksi lalu tekan “💾 Simpan Variasi Ini”.</span>`;
         return;
     }
 

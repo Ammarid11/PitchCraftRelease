@@ -6,7 +6,7 @@
  *
  * Syarat: buat dua akun UJI di Supabase (Authentication -> Users, centang auto-confirm, beri password). Jangan pakai akun asli.
  * Baris uji berawalan "rlstest-". Sesi & lencana tidak bisa dihapus dari klien (RLS append-only), jadi sisa baris uji
- * dibersihkan lewat SQL Editor:  delete from public.sessions where id like 'rlstest-%';  delete from public.badges where badge_id like 'rlstest-%';
+ * dibersihkan lewat SQL Editor:  delete from public.sessions where id like 'rlstest-%';  delete from public.badges where badge_id like 'rlstest-%';  delete from public.misses where id like 'rlstest-%';
  * URL dan anon key dibaca dari js/supabase-config.js. Skrip ini tidak butuh dan tidak boleh diberi service_role key. */
 const fs = require('fs'), path = require('path');
 const cfgSrc = fs.readFileSync(path.join(__dirname, '..', 'js', 'supabase-config.js'), 'utf8');
@@ -47,14 +47,17 @@ const denied = r => r.status >= 400 || rows(r).length === 0;   // ditolak, atau 
     r = await api(A.token, 'POST', 'settings', { data: { v: 1, rahasia: 'A' } }, { Prefer: 'return=representation,resolution=merge-duplicates' });
     ok(r.status === 201 || r.status === 200, 'A bisa menulis pengaturan (status ' + r.status + ')');
 
+    r = await api(A.token, 'POST', 'misses', { id: tag + '-m', want: 'Am', got: 'C', happened_at: now });  ok(r.status === 201, 'A bisa insert catatan akor salah (status ' + r.status + ')');
+
     // ---- B tidak boleh MELIHAT data A ----
     r = await api(B.token, 'GET', 'sessions?id=eq.' + tag + '-s');               ok(rows(r).length === 0, 'B tidak melihat sesi A');
     r = await api(B.token, 'GET', 'badges?badge_id=eq.' + tag + '-b');           ok(rows(r).length === 0, 'B tidak melihat lencana A');
     r = await api(B.token, 'GET', 'songs?id=eq.' + tag + '-song');               ok(rows(r).length === 0, 'B tidak melihat lagu A');
     r = await api(B.token, 'GET', 'settings?user_id=eq.' + A.id);                ok(rows(r).length === 0, 'B tidak melihat pengaturan A');
     r = await api(B.token, 'GET', 'sessions?user_id=eq.' + A.id);                ok(rows(r).length === 0, 'B tidak bisa menyaring sesi lewat user_id A');
+    r = await api(B.token, 'GET', 'misses?id=eq.' + tag + '-m');                  ok(rows(r).length === 0, 'B tidak melihat catatan akor salah A');
     // ---- anon (tanpa login) ----
-    for (const t of ['sessions', 'badges', 'songs', 'settings']) { r = await api(null, 'GET', t + '?select=*'); ok(rows(r).length === 0, 'tanpa login: tabel ' + t + ' kosong/ditolak'); }
+    for (const t of ['sessions', 'badges', 'songs', 'settings', 'misses']) { r = await api(null, 'GET', t + '?select=*'); ok(rows(r).length === 0, 'tanpa login: tabel ' + t + ' kosong/ditolak'); }
 
     // ---- B tidak boleh MENULIS atas nama A atau mengubah data A ----
     r = await api(B.token, 'POST', 'sessions', Object.assign(sess(tag + '-forge'), { user_id: A.id }));  ok(r.status >= 400, 'B tidak bisa insert sesi dengan user_id A (status ' + r.status + ')');
@@ -68,6 +71,10 @@ const denied = r => r.status >= 400 || rows(r).length === 0;   // ditolak, atau 
     r = await api(A.token, 'PATCH', 'sessions?id=eq.' + tag + '-s', { dur: 7200 });                    ok(denied(r), 'A tidak bisa mengubah sesinya sendiri (append-only)');
     r = await api(A.token, 'DELETE', 'sessions?id=eq.' + tag + '-s');                                   ok(denied(r), 'A tidak bisa menghapus sesinya sendiri (append-only)');
     r = await api(A.token, 'DELETE', 'badges?badge_id=eq.' + tag + '-b');                               ok(denied(r), 'A tidak bisa menghapus lencananya sendiri (append-only)');
+
+    r = await api(B.token, 'POST', 'misses', { user_id: A.id, id: tag + '-mf', want: 'Am', got: 'C', happened_at: now }); ok(r.status >= 400, 'B tidak bisa insert catatan salah atas nama A (status ' + r.status + ')');
+    r = await api(A.token, 'PATCH', 'misses?id=eq.' + tag + '-m', { got: 'X' });                       ok(denied(r), 'A tidak bisa mengubah catatan salahnya (append-only)');
+    r = await api(A.token, 'DELETE', 'misses?id=eq.' + tag + '-m');                                    ok(denied(r), 'A tidak bisa menghapus catatan salahnya (append-only)');
 
     // ---- batas dari skema (check constraint) ----
     r = await api(A.token, 'POST', 'sessions', Object.assign(sess(tag + '-big'), { dur: 999999 }));    ok(r.status >= 400, 'sesi dengan dur di luar batas ditolak (status ' + r.status + ')');

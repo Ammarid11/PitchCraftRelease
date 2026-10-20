@@ -45,8 +45,8 @@ function renderSong() {
         <div class="song-sec">
             <div class="picker-row"><input type="text" class="song-in" value="${esc(s.name)}" maxlength="60" aria-label="Nama bagian" onchange="songSet(${i},'name',this.value)">
                 <button class="btn-delete-saved" onclick="songDelSection(${i})">Hapus</button></div>
-            <div class="detected-list" style="margin-top:8px">${s.chords.length ? s.chords.map((c, j) => `<div class="badge">${c.key}${capo ? ` <small>→ ${tKey(c.key, capo)}</small>` : ''} <select class="beat-sel" aria-label="Durasi" onchange="songBeats(${i},${j},this.value)">${beatOpts(c.beats || 0)}</select> <span onclick="songDelChord(${i},${j})">&times;</span></div>`).join('') : '<span class="empty-list">Belum ada akor.</span>'}</div>
-            <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="songAddChord(${i})">➕ Akor saat ini</button><button class="btn-variant" onclick="songFromProg(${i})">⤵ Dari Progresi</button></div>
+            <div class="detected-list" style="margin-top:8px">${s.chords.length ? s.chords.map((c, j) => `<div class="badge">${c.key}${capo ? ` <small>→ ${tKey(c.key, capo)}</small>` : ''} <select class="beat-sel" aria-label="Durasi" onchange="songBeats(${i},${j},this.value)">${beatOpts(c.beats || 0)}</select> <span onclick="songDelChord(${i},${j})">&times;</span></div>`).join('') : '<span class="empty-list">Belum ada akor. Tekan “📚 Dari Kamus” untuk memilih akor, atau “⤵ Dari Progresi”.</span>'}</div>
+            <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="pkOpen('song',${i})">📚 Dari Kamus</button><button class="btn-variant" onclick="songAddChord(${i})">➕ Akor saat ini</button><button class="btn-variant" onclick="songFromProg(${i})">⤵ Dari Progresi</button></div>
             <textarea class="song-ta" rows="4" aria-label="Lirik" placeholder="Lirik dengan akor, mis. [Am]Selamat [G]pagi dunia" onchange="songSet(${i},'lyrics',this.value)">${esc(s.lyrics)}</textarea>
             <div class="lyr">${lyricsHTML(s.lyrics)}</div>
         </div>`).join('');

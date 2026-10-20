@@ -11,7 +11,7 @@ try {
     document.getElementById('refSel').innerHTML = Array.from({ length: 15 }, (_, i) => 432 + i).map(n => `<option value="${n}"${n === 440 ? ' selected' : ''}>${n} Hz</option>`).join('');
     document.getElementById('patSel').innerHTML = Object.keys(STRUM_PATS).map(k => `<option>${k}</option>`).join('');
     loadSettings(); renderHist(); libInit(); kpInit();
-    renderTuning(); renderKey(); renderPat(); renderProgression(); renderSong(); refreshChordViews();
+    renderTuning(); renderKey(); renderPat(); renderProgression(); renderSong(); refreshChordViews(); drillHelp();
     let t0 = 'deteksi'; try { t0 = localStorage.getItem('pc_tab') || 'deteksi'; } catch (e) { }
     showTab(['deteksi', 'tuning', 'kamus', 'latih', 'lagu', 'progresi'].includes(t0) ? t0 : 'deteksi');
 } catch (e) { console.error(e); if (window.pcShow) window.pcShow('Gagal memuat menu: ' + e.message); }
