@@ -17,11 +17,11 @@ Satu pengecualian ada di #4, yang hanya memanggil fungsi pitch yang sudah ada (l
 | 3 | Impor lagu dari teks (tempel lirik+akor) | Tinggi | ✅ Selesai |
 | 4 | Cari kunci yang cocok untuk suaramu | Tinggi | ⏳ Belum |
 | 5 | Metronom visual + tap tempo | Menengah | ✅ Selesai |
-| 6 | Latihan berbasis kelemahan | Menengah | ⏳ Belum |
-| 7 | Animasi jari saat pindah akor | Menengah | ⏳ Belum |
-| 8 | Kartu bagikan (share card) | Menengah | ⏳ Belum |
+| 6 | Latihan berbasis kelemahan | Menengah | ✅ Selesai |
+| 7 | Animasi jari saat pindah akor | Menengah | ✅ Selesai |
+| 8 | Kartu bagikan (share card) | Menengah | ✅ Selesai |
 | 9 | PWA (manifest + service worker) | Teknis | ✅ Selesai |
-| 10 | Mode panggung / latar terang | Teknis | ⏳ Belum |
+| 10 | Mode panggung / latar terang | Teknis | ✅ Selesai |
 
 Semua yang berstatus selesai sudah lolos cek sintaks dan tes deteksi. Belum diuji langsung di browser atau perangkat nyata, jadi tampilan dan perilakunya perlu dicoba dulu.
 
@@ -51,7 +51,7 @@ Data disimpan di `localStorage`:
 | `pc_lastlog` | penanda sesi terakhir yang sudah dicatat |
 | `pc_hist` | riwayat 30 sesi terakhir |
 
-Catatan: "Hapus riwayat" hanya menghapus `pc_hist`, bukan streak dan lencana. Penyimpanan ini per perangkat dan per browser. Rencana sinkron ada di `AUTH-SERVER-SUPABASE.md`.
+Catatan: "Hapus riwayat" hanya menghapus `pc_hist`, bukan streak dan lencana. Penyimpanan ini per perangkat dan per browser. Sinkron antar perangkat: lihat `README_DB.md`.
 
 ### 3. Tempel lirik + akor
 Tombol **📋 Tempel teks** di tab Lagu mengubah format dua baris (akor di atas lirik) menjadi `[Am]kata`.
@@ -71,6 +71,39 @@ Tombol **📋 Tempel teks** di tab Lagu mengubah format dua baris (akor di atas 
 - **Naikkan `VERSI` di `sw.js` setiap kali ada file yang berubah**, supaya cache lama dibuang.
 - Font Google tidak ikut di-cache; saat offline dipakai font sistem.
 
+### 6. Latih yang lemah
+Mode **Latih yang lemah** di tab Latih memilih akor yang paling sering salah.
+- Tiap kesalahan dicatat per kejadian (`logMiss` di `practice.js`): akor diminta, akor terbaca, waktu. Disimpan di `pc_miss` (300 terbaru di perangkat).
+- `weakPool()` mengambil sampai 6 akor teratas; butuh minimal 2 akor berbeda, jika kurang app meminta latihan dulu lewat mode lain.
+- Riwayat lengkap ikut tersinkron ke tabel `misses` di server (append-only, RLS) dan tercakup di `tests/sync.test.js` dan `tests/rls.test.js`.
+- Daftar "Paling sering salah" tampil di bawah riwayat latihan.
+
+### 8. Kartu bagikan
+`js/share.js` membuat gambar PNG 1080×1920 (ukuran Story) lewat `<canvas>`, seluruhnya di perangkat. Tidak ada data yang dikirim ke server.
+- **🖼 Kartu Gambar** di tab Progresi: urutan akor (maks. 12, bentuk jari + "bunyi" bila pakai capo), kunci/capo, BPM, birama, pola strum.
+- **🖼 Bagikan skor terakhir** di tab Latih: akor/menit, benar/salah, akurasi, durasi, streak, jumlah lencana, dan tanda "Rekor pribadi".
+- Dialog pratinjau dulu, lalu **Bagikan** (Web Share API dengan berkas gambar) atau **Unduh PNG** sebagai cadangan bila browser tidak mendukung berbagi berkas.
+- Alamat situs ikut tercetak di kaki kartu bila app dibuka dari domain sungguhan (bukan localhost).
+- Batasan: huruf Google Fonts tidak ikut di-cache, jadi saat offline kartu memakai font sistem. Emoji bergantung pada font perangkat.
+
+
+### 10. Mode panggung / latar terang
+Tombol **🎨 Tampilan** di bilah atas membuka dialog dengan dua pengaturan, disimpan per perangkat (`pc_theme`, `pc_stage`) dan tidak ikut sinkron akun.
+- **Tema:** Gelap (bawaan), Terang, atau Otomatis (mengikuti ponsel). Terang menimpa variabel warna di `:root` dan warna yang tertulis langsung di `style.css`. Skrip kecil di `<head>` memasang tema sebelum halaman tampil, jadi tidak berkedip. `privacy.html` ikut tema.
+- **Mode Panggung:** kontras tinggi (teks putih/hitam murni, garis lebih tegas), huruf 112%, nada terdeteksi lebih besar, animasi latar dimatikan, dan layar tetap menyala (Wake Lock) selama mode ini aktif.
+- Kartu bagikan (canvas) tetap bertema gelap supaya gambar yang dibagikan konsisten.
+- Batasan: ikon PWA dan `theme_color` di `manifest.json` tetap gelap (manifest tidak bisa berubah per tema); warna bilah status mengikuti tema lewat `<meta theme-color>`.
+
+
+### 7. Animasi jari saat pindah akor
+Kartu **Pindah Akor** di tab Progresi membandingkan dua akor (Dari / Ke) dan menganimasikan jarinya.
+- **Hijau** = jari tetap di senar dan fret yang sama, **ungu** = berpindah (bergeser mulus ke posisi baru), **merah** = diangkat, **biru** = baru diletakkan. Ringkasan teks menyebut senar dan fret tiap perpindahan.
+- Tombol **▶ Putar animasi** berganti A↔B otomatis; mengetuk gambar berganti manual. **⏭ Dari Progresi** mengambil dua akor berurutan dari Progresi (berputar), **⇄ Tukar** membalik arah, **Bunyikan** memainkan akor tiap pergantian.
+- Memakai `analyzeFingers` dan `adaptFingering` yang sudah ada, jadi ikut tuning, mode kidal, dan tema. Animasi digerakkan CSS lewat atribut `data-ph`; mati sendiri bila perangkat memakai "kurangi gerakan" (gambar berganti tanpa geser).
+- Pemasangan jari yang berpindah memakai tebakan terdekat (nomor jari sama, lalu jarak terkecil), jadi pada akor barre pasangannya bisa berbeda dari yang diajarkan guru.
+- Batasan: memakai bentuk pertama tiap akor bila dipilih dari daftar; dari Progresi, bentuk yang dipilih di sana yang dipakai. Barre digambar sebagai batang pudar, bukan ikut bergeser.
+- Tes: `tests/finger-move.test.js`.
+
 ---
 
 ## Yang belum dikerjakan
@@ -81,19 +114,6 @@ Pengguna bernyanyi, app menangkap nada terendah dan tertinggi, lalu menyarankan 
 - `gate.js` sengaja menolak suara orang (nada meluncur/bergetar). Untuk nyanyian perlu **jalur terpisah dengan ambang lebih longgar**, jangan melonggarkan gate yang sekarang agar deteksi gitar tetap aman.
 - Bisa dilewati dulu jika ingin deteksi tetap 100% tak tersentuh.
 
-### 6. Latihan berbasis kelemahan
-Catat akor yang sering salah (`dr.bad`), lalu mode "Latih yang lemah" memprioritaskan akor itu.
-- Perlu mencatat akor per kesalahan di `pcLock` (sekarang hanya jumlah salah per sesi).
-- Sebaiknya dikerjakan setelah struktur log sesi dirapikan (lihat tahap 0 di `AUTH-SERVER-SUPABASE.md`), supaya data kelemahan ikut tersinkron nanti.
-
-### 7. Animasi jari saat pindah akor
-Tampilkan transisi akor A ke B: jari yang tetap (*common finger*) dan jari yang berpindah. Berguna untuk pemula yang macet di perpindahan. Data jari sudah ada di `analyzeFingers`.
-
-### 8. Kartu bagikan
-Hasilkan gambar progresi atau skor latihan lewat `<canvas>` untuk dikirim ke WhatsApp/Instagram Story. Cara paling murah agar orang lain tahu app ini ada. Gunakan Web Share API bila tersedia, dan unduhan gambar sebagai cadangan.
-
-### 10. Mode panggung / latar terang
-Saat ini hanya tema gelap. Tambahkan kontras tinggi, font besar, dan opsi latar terang untuk main di luar ruangan atau panggung. Warna sudah memakai variabel CSS di `:root`, jadi cukup menambah satu set variabel lain.
 
 ---
 
@@ -107,10 +127,10 @@ Saat ini hanya tema gelap. Tambahkan kontras tinggi, font besar, dan opsi latar 
 2. ~~Mode Main (#1)~~ selesai
 3. ~~Tempel teks (#3)~~ selesai
 4. ~~Streak + lencana (#2)~~ selesai
-5. Share card (#8)
-6. Latih yang lemah (#6), setelah log sesi dirapikan
-7. Mode terang (#10), lalu animasi jari (#7)
-8. Cari kunci suara (#4), jika siap membuat jalur gate terpisah
+5. ~~Share card (#8)~~ selesai
+6. ~~Latih yang lemah (#6)~~ selesai
+7. ~~Mode terang (#10)~~ dan ~~animasi jari (#7)~~ selesai
+8. Cari kunci suara (#4), jika siap membuat jalur gate terpisah  ← berikutnya
 
 ## Posisi produk
 Banyak app akor sudah ada. Pembeda nyata di sini: **deteksi akor dari genjrengan nyata, offline, dengan latihan yang mengecek permainanmu**. Fitur baru sebaiknya memperkuat itu (misalnya streak dan "latih yang lemah" berbasis Mode Strum), bukan menyebar menjadi app serba ada.

@@ -9,7 +9,7 @@ function computeChromaClassic(fd, sampleRate, fftSize) {
     const kLo = Math.max(1, Math.floor(70 / binHz)), kHi = Math.min(fd.length - 2, Math.ceil(2000 / binHz));
     let maxDb = -Infinity;
     for (let k = kLo; k <= kHi; k++) if (fd[k] > maxDb) maxDb = fd[k];
-    const floor = maxDb - 30, bass = { m: 0 }, lows = [];
+    const floor = maxDb - 30, bass = { m: 0 };
     for (let k = kLo; k <= kHi; k++) {
         const b = fd[k];
         if (b < floor || b < fd[k - 1] || b < fd[k + 1]) continue;
@@ -18,11 +18,8 @@ function computeChromaClassic(fd, sampleRate, fftSize) {
         const mag = Math.pow(10, b / 20);
         const pc = ((Math.round(69 + 12 * Math.log2(f / refA)) % 12) + 12) % 12;
         chroma[pc] += mag;
-        if (f < 200) { lows.push({ f, mag, pc }); if (mag > bass.m) { bass.m = mag; bass.pc = pc; } }
+        if (f < 200 && mag > bass.m) { bass.m = mag; bass.pc = pc; }
     }
-    // bass = nada TERENDAH yang cukup kuat (bukan sekadar puncak terkuat di bawah 200 Hz): akor simetris (aug, dim7) menentukan akarnya dari sini
-    const low = lows.filter(o => o.mag >= 0.5 * bass.m).sort((a, b) => a.f - b.f)[0];
-    if (low) bass.pc = low.pc;
     return { chroma, bass, maxMag: Math.pow(10, maxDb / 20) };
 }
 
@@ -110,12 +107,9 @@ function rankByChroma(chroma, bassPc) {
         if (chordDatabase[key].ext) continue;   // kamus lanjutan tidak ikut deteksi (menjaga akurasi)
         const c = chordDatabase[key], t = new Array(12).fill(0);
         const rr = noteStrings.indexOf(c.root), has = d => c.notes.includes(noteStrings[(rr + d) % 12]);
-        // aug (0,4,8) dan dim7 (0,3,6,9) simetris: Daug = F#aug = A#aug berisi nada yang sama persis. Akar hanya bisa ditentukan dari bass,
-        // jadi template tidak boleh menganakemaskan satu akar (bobot akar, bonus terts), kalau tidak akar yang menang acak.
-        const qSym = key.slice(c.root.length), sym = qSym === 'aug' || qSym === 'dim7';
-        const minor3 = !sym && has(3) && !has(4), major3 = !sym && has(4) && !has(3);
+        const minor3 = has(3) && !has(4), major3 = has(4) && !has(3);
         c.notes.forEach(n => {
-            const pc = noteStrings.indexOf(n), w = n === c.root && !sym ? 1.2 : 1;
+            const pc = noteStrings.indexOf(n), w = n === c.root ? 1.2 : 1;
             t[pc] += w;
             if (strumAlgo === 'klasik') { t[(pc + 7) % 12] += 0.3 * w; if (!(minor3 && n === c.root)) t[(pc + 4) % 12] += 0.15 * w; }
         });
@@ -124,8 +118,6 @@ function rankByChroma(chroma, bassPc) {
         score -= 0.012 * Math.max(0, c.notes.length - 3);
         if (bassPc >= 0 && noteStrings[bassPc] === c.root) score += strumAlgo === 'klasik' ? 0.04 : 0.08;
         score -= QUAL_PRIOR[key.slice(c.root.length)] || 0;
-        if (sym) score += 0.12 * Math.min(1, Math.min(...c.notes.map(n => obs[noteStrings.indexOf(n)])) / 0.3);   // bukti 'akor lengkap': semua nadanya terdengar (sama untuk tiap rotasi)
-        if (sym) score += (bassPc >= 0 && noteStrings[bassPc] === c.root ? 0.08 : 0) + 0.03 * obs[rr];   // bass = akar; tanpa bass, nada terkuat dipilih
         // akor yang lebih lengkap menang jika energi terbaca lebih banyak dijelaskan olehnya (Cm7 vs D#5)
         const sumObs = obs.reduce((a, v) => a + v, 0) || 1;
         score += 0.1 * c.notes.reduce((a, n) => a + obs[noteStrings.indexOf(n)], 0) / sumObs;
@@ -150,17 +142,14 @@ function rankByChroma(chroma, bassPc) {
         // bonus bukti terts: akor lengkap (ada terts) menang atas versi tanpa terts (D5) saat terts terdengar walau lemah
         if (minor3) score += 0.12 * Math.min(1, o3 / 0.3);
         if (major3) score += 0.12 * Math.min(1, o4 / 0.3);
-        // terts hampir tidak terdengar sama sekali -> akor bertekstur mayor/minor kurang meyakinkan (Asus2 sering terbaca Am/A karena tanpa C/C#)
-        if (minor3 || major3) score -= 0.25 * Math.max(0, 0.12 - (minor3 ? o3 : o4)) / 0.12;
         const qq = key.slice(c.root.length);
         if (qq === 'sus4' || qq === 'sus2' || qq === '7sus4') {   // sus = tanpa terts; kalau terts terdengar, bukan sus (D mayor vs Dsus4)
             const r0 = noteStrings.indexOf(c.root);
             const third = Math.max(obs[(r0 + 3) % 12], obs[(r0 + 4) % 12]);
             const sv = obs[(r0 + (qq === 'sus2' ? 2 : 5)) % 12];   // nada "gantung" (2 atau 4) harus benar-benar terdengar
-            score -= 0.04;                                          // sus jauh lebih jarang daripada mayor/minor: kalah saat bukti tipis
+            score -= 0.07;                                          // sus jauh lebih jarang daripada mayor/minor: kalah saat bukti tipis
             score -= 0.9 * Math.max(0, third - 0.15);               // terts terdengar -> bukan sus
-            score -= 0.4 * Math.max(0, 0.3 - sv);                   // nada gantung lemah -> sus tidak meyakinkan
-            if (third < 0.08) score += 0.06 * Math.min(1, sv / 0.2);   // terts benar-benar tidak ada + nada gantung terdengar = sus yang jelas
+            score -= 0.4 * Math.max(0, 0.5 - sv);                   // nada gantung lemah -> sus tidak meyakinkan
             if (third >= 0.6 * sv) score -= 0.15;                   // terts hampir sekuat nada gantung -> ambigu, pilih mayor/minor
         }
         if (exemplars[key]) {   // akor ini pernah dikonfirmasi pengguna: bonus jika pola chroma mirip

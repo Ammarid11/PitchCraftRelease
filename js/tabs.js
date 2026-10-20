@@ -1,5 +1,7 @@
 /* Pitchcraft — Menu tab, tip singkat tiap tab, dan panel Bantuan (cara pakai). */
 
+const APP_VER = 'v17';   // samakan dengan VERSI di sw.js; tampil di panel Bantuan untuk memastikan versi yang berjalan
+
 // [id tab, ikon, nama, tip satu kalimat, cara pakai]
 const GUIDE = [
     ['deteksi', '🎸', 'Deteksi', 'Cari tahu nada atau akor yang kamu mainkan.', 'Petik SATU senar lalu tekan “Mulai Mendengarkan”: muncul nama nada dan seberapa pas. Atau tekan “Mode Strum” dan genjreng semua senar sekali: app menebak akornya dan menunjukkan posisi jari. Tuning standar memberi hasil terbaik.'],
@@ -7,7 +9,7 @@ const GUIDE = [
     ['kamus', '📚', 'Kamus', 'Semua akor untuk tiap nada dasar.', 'Pilih nada dasar atau ketik nama akor (mis. F#m7). Ketuk gambar untuk memilih akor, 🔊 untuk mendengarnya, ➕ Progresi untuk menambahkannya ke urutan akor.'],
     ['latih', '🏋', 'Latih', 'Latihan pindah akor dan kuis, dicek lewat mikrofon.', 'Pilih mode, tingkat, dan durasi, lalu Mulai. Genjreng akor yang diminta. Streak harian dan lencana tercatat di sini.'],
     ['lagu', '🎵', 'Lagu', 'Menulis lagu: bagian, akor, dan lirik.', 'Tulis lirik dengan akor di kurung siku, mis. [Am]kata, atau 📋 tempel teks dari situs akor. 🎤 Mode Main menampilkan lirik besar untuk dipakai saat bermain.'],
-    ['progresi', '📋', 'Progresi', 'Susun urutan akor dan putar dengan metronom.', 'Tambah akor, atur BPM dan pola strum, lalu ▶ Putar. Akor yang kamu simpan juga ada di tab ini.']
+    ['progresi', '📋', 'Progresi', 'Susun urutan akor dan putar dengan metronom.', 'Tambah akor, atur BPM dan pola strum, lalu ▶ Putar. Kartu Pindah Akor menunjukkan jari mana yang tetap dan berpindah saat ganti akor. Akor yang kamu simpan juga ada di tab ini.']
 ];
 
 function showTab(n) {
@@ -40,8 +42,9 @@ function helpToggle(open) {
 }
 function helpRender() {
     document.getElementById('helpBody').innerHTML = GUIDE.map(g => `<div class="hl-item"><div class="hl-top"><strong>${g[1]} ${g[2]}</strong><button class="btn-variant" onclick="helpGo('${g[0]}')">Buka</button></div><p>${g[3]} ${g[4]}</p></div>`).join('') +
-        `<div class="hl-item"><strong>ℹ Tips umum</strong><p>Mikrofon butuh alamat https://. Semua fitur jalan tanpa internet dan tanpa akun; 👤 Akun hanya untuk menyinkronkan progres ke perangkat lain. 🎼 Kunci mengatur kunci lagu dan capo (tekan Terapkan agar berlaku).</p></div>
-        <div class="picker-row"><button class="btn-variant" onclick="tipsReset();helpToggle(false)">Tampilkan lagi tips tiap menu</button></div>`;
+        `<div class="hl-item"><strong>ℹ Tips umum</strong><p>Mikrofon butuh alamat https://. Semua fitur jalan tanpa internet dan tanpa akun; 👤 Akun hanya untuk menyinkronkan progres ke perangkat lain. 🎼 Kunci mengatur kunci lagu dan capo (tekan Terapkan agar berlaku). 🎨 Tampilan mengganti tema gelap/terang dan menyalakan Mode Panggung untuk bermain di luar ruangan.</p></div>
+        <div class="picker-row"><button class="btn-variant" onclick="tipsReset();helpToggle(false)">Tampilkan lagi tips tiap menu</button></div>
+        <p class="ac-fine" style="margin-top:12px">Versi app: ${APP_VER}</p>`;
 }
 function helpGo(n) { helpToggle(false); showTab(n); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') helpToggle(false); });

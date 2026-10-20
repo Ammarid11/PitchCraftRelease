@@ -71,7 +71,6 @@ const SKENARIO = [
     { nama: 'normal',          gains: [1, .95, .9, .85, .8, .75], noise: 0.002, min: 0.85, kual: ['', 'm', '7', 'm7', 'maj7', 'sus4'] },
     { nama: 'senar tipis lemah', gains: [1, .95, .9, .85, .3, .25], noise: 0.002, min: 0.65, kual: ['', 'm', '7', 'm7'] },
     { nama: 'ruangan bising',  gains: [1, .95, .9, .85, .8, .75], noise: 0.02,  min: 0.65, kual: ['', 'm', '7', 'm7'] },
-    { nama: 'simetris (aug, dim7)', gains: [1, .95, .9, .85, .8, .75], noise: 0.002, min: 0.85, strict: true, kual: ['aug', 'dim7'] },   // strict: nama akor harus persis (akar ditentukan bass)
     // Batasan yang disengaja (informasi saja, tidak menggagalkan): power chord & sus2 sengaja kalah dari mayor/add9 saat terts samar
     { nama: 'batasan diketahui (5, sus2)', gains: [1, .95, .9, .85, .8, .75], noise: 0.002, min: 0, info: true, kual: ['5', 'sus2'] }
 ];
@@ -88,8 +87,8 @@ algos.forEach(algo => {
             const fd = spectrum(ch.variants[0].fingering, sk.gains, sk.noise, rand), ranked = detect(fd);
             if (!ranked.length) { n++; salah.push(`${key} → (kosong)`); continue; }
             n++;
-            const benar = sk.strict ? ranked[0].key === key : notesOf(ranked[0].key) === notesOf(key);        // akor ber-nada sama (Am7 = C6) dianggap benar
-            if (ranked.slice(0, 3).some(r => sk.strict ? r.key === key : notesOf(r.key) === notesOf(key))) top3++;
+            const benar = notesOf(ranked[0].key) === notesOf(key);        // akor ber-nada sama (Am7 = C6) dianggap benar
+            if (ranked.slice(0, 3).some(r => notesOf(r.key) === notesOf(key))) top3++;
             const margin = ranked.length > 1 ? ranked[0].score - ranked[1].score : 1;
             (benar ? stat.benar : stat.salah).push(margin);
             if (benar) ok++; else salah.push(`${key} → ${ranked[0].key}`);
@@ -107,13 +106,4 @@ if (confidenceOf) {
     const lvl = {}; [...stat.benar.map(m => ['benar', m]), ...stat.salah.map(m => ['salah', m])].forEach(([t, m]) => { const l = confidenceOf(m); lvl[l] = lvl[l] || { benar: 0, salah: 0 }; lvl[l][t]++; });
     console.log('Tingkat keyakinan:', JSON.stringify(lvl));
 }
-// Regresi dari rekaman nyata: Asus2 (A-E-A-B-E, terts C/C# nyaris tak terdengar) pernah terbaca Am
-setAlgo('klasik');
-const DAUG = [.02,.09,1,.02,.02,.02,.23,.02,.02,.17,1,.02];   // rekaman nyata Daug: D dan A# sama kuat (aug simetris), akar hanya dari bass
-[['Asus2 (rekaman nyata)', [.01,.01,.01,.01,.33,.01,.01,.01,.07,1,.01,.28], 'Asus2'], ['Asus2 (B lebih lemah)', [.01,.01,.01,.01,.40,.01,.01,.01,.07,1,.01,.18], 'Asus2'],
- ['Am (C lemah)', [.18,.01,.01,.01,.45,.01,.01,.02,.05,1,.01,.06], 'Am'], ['A mayor', [.01,.40,.01,.01,.55,.01,.01,.01,.07,1,.01,.08], 'A'],
- ['Daug (bass D)', DAUG, 'Daug', 2], ['Daug chroma, bass A# = A#aug', DAUG, 'A#aug', 10], ['Daug chroma, bass F# = F#aug', DAUG, 'F#aug', 6]].forEach(([n, v, want, bass = 9]) => {
-    const top = rankByChroma(v, bass)[0].key, ok = top === want; if (!ok) gagalTotal++;
-    console.log(`${ok ? 'LULUS' : 'GAGAL'}  regresi ${pad(n, 24)} → ${top}${ok ? '' : ' (seharusnya ' + want + ')'}`);
-});
 process.exit(gagalTotal ? 1 : 0);

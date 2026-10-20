@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#090a0f">
     <meta name="color-scheme" content="dark">
+    <script>try{var t=localStorage.getItem('pc_theme'),l=t==='terang'||(t==='auto'&&matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.setAttribute('data-theme',l?'light':'dark');if(localStorage.getItem('pc_stage')==='1')document.documentElement.className='stage'}catch(e){}</script>
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Pitchcraft — Ultimate Guitar Chord Master</title>
@@ -30,6 +31,7 @@
         <button id="keyPill" class="keypill" title="Atur kunci lagu dan posisi capo" onclick="kpToggle(true)" aria-haspopup="dialog">🎼 Kunci C · tanpa capo</button>
         <button id="acctBtn" class="keypill" title="Masuk untuk sinkron progres, cadangan, hapus data" onclick="acctToggle(true)" aria-haspopup="dialog">👤 Akun</button>
         <button id="helpBtn" class="keypill" title="Cara memakai tiap menu" onclick="helpToggle(true)" aria-haspopup="dialog">❓ Bantuan</button>
+        <button id="lookBtn" class="keypill" title="Tema terang/gelap dan Mode Panggung" onclick="lookToggle(true)" aria-haspopup="dialog">🎨 Tampilan</button>
         <button id="installBtn" class="keypill" hidden onclick="pcInstall()">⬇ Pasang</button>
     </header>
 
@@ -82,8 +84,8 @@
                 <button class="btn-variant" onclick="pickManual()">Tampilkan</button>
                 </div>
             <div class="field-label" style="margin:12px 0 6px">Tampilan diagram</div>
-            <div class="picker-row"><button class="btn-variant" onclick="toggleLefty()">🤚 Mode Kidal</button>
-                <button class="btn-variant" onclick="toggleDiagram()">↔ Diagram Vertikal</button>
+            <div class="picker-row"><button class="btn-variant" data-tg="lefty" aria-pressed="false" onclick="toggleLefty()">🤚 Mode Kidal</button>
+                <button class="btn-variant" data-tg="diag" aria-pressed="false" onclick="toggleDiagram()">↔ Diagram Vertikal</button>
             </div>
 
             <div class="field-row">
@@ -117,14 +119,15 @@
                 <p>Susun urutan akor lalu putar dengan metronom.</p>
             </div>
             <div class="field-label" style="margin:0 0 6px">Urutan akor</div>
-            <div class="picker-row"><button class="btn-secondary" style="flex:1 1 160px" onclick="pkOpen('prog')">📚 Tambah dari Kamus</button><button class="btn-secondary" style="flex:1 1 160px" onclick="addToProgression()">➕ Akor Saat Ini</button></div>
+            <div class="picker-row"><button class="btn-secondary" onclick="cpOpen('prog')" style="flex:1 1 180px">📚 Tambah dari Kamus</button>
+                <button class="btn-secondary" onclick="addToProgression()" style="flex:1 1 180px">➕ Akor Saat Ini</button></div>
             <div id="progList" class="detected-list" style="margin-top:10px"><span class="empty-list">Belum ada progresi.</span></div>
             <div class="field-label" style="margin:16px 0 6px">Tempo</div>
             <div class="picker-row"><input id="bpm" data-sync="bpm" type="number" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span><button class="btn-variant" onclick="pcTap()">👆 Tap</button><span class="beat-dot" aria-hidden="true"></span>
                 <label><input type="checkbox" id="metroChk" data-sync="metro" checked> Metronom</label>
                 <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label></div>
             <div class="field-label" style="margin:14px 0 6px">Putar</div>
-            <div class="picker-row"><button class="btn-variant" onclick="playProgression()">▶ Putar</button>
+            <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="playProgression()">▶ Putar</button>
                 <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
                 <button class="btn-variant" onclick="progression=[];renderProgression()">Kosongkan</button>
             </div>
@@ -134,9 +137,23 @@
             <div id="patView" class="hz-display" style="text-align:left;letter-spacing:4px"></div>
             <div class="field-label" style="margin:14px 0 6px">Rekam &amp; bagikan</div>
             <div class="picker-row"><label><input type="checkbox" id="autoRec"> Rekam otomatis dari Mode Strum</label>
-                <button class="btn-variant" onclick="shareProg()">📤 Bagikan / Salin</button></div>
+                <button class="btn-variant" onclick="shareProg()">📤 Bagikan / Salin</button>
+                <button class="btn-variant" onclick="scOpen('prog')" title="Gambar progresi untuk WhatsApp / Story">🖼 Kartu Gambar</button></div>
         </section>
 
+        <!-- Pindah akor -->
+        <section class="card" data-tab="progresi">
+            <div class="card-head"><h2>Pindah Akor</h2><p>Lihat jari mana yang tetap dan mana yang berpindah saat berganti dari satu akor ke akor lain. Ketuk gambar untuk berganti sisi.</p></div>
+            <div class="picker-row"><label>Dari <select id="mvFrom" onchange="mvPick()" aria-label="Akor asal"></select></label>
+                <label>Ke <select id="mvTo" onchange="mvPick()" aria-label="Akor tujuan"></select></label></div>
+            <div class="picker-row" style="margin-top:8px"><button id="mvPlayBtn" class="btn-variant" onclick="mvToggle()">▶ Putar animasi</button>
+                <button class="btn-variant" onclick="mvSwap()">⇄ Tukar</button>
+                <button class="btn-variant" onclick="mvNextPair()" title="Ambil dua akor berurutan dari Progresi">⏭ Dari Progresi</button>
+                <label><input type="checkbox" id="mvSnd"> Bunyikan</label></div>
+            <div id="mvStage"></div>
+            <div class="mv-legend"><span><i style="background:#10b981"></i>tetap</span><span><i style="background:#8b5cf6"></i>berpindah</span><span><i style="background:#ef4444"></i>diangkat</span><span><i style="background:#38bdf8"></i>diletakkan</span></div>
+            <div id="mvInfo" class="chord-detail-row"></div>
+        </section>
         <!-- 4. Tersimpan -->
         <section class="card" data-tab="progresi">
             <div class="field-row" style="margin-top:0">
@@ -175,9 +192,8 @@
             <div id="drillHelp" class="chord-detail-row" style="margin-top:8px"></div>
             <div id="drillTarget" class="note-display" style="text-align:center;margin-top:1rem">—</div>
             <div id="drillInfo" class="hz-display" style="text-align:center">Pilih mode lalu tekan Mulai.</div>
-            <div id="drillFret" style="text-align:center"></div>
             <div id="drillHist" class="chord-detail-row" style="margin-top:12px;font-size:.8rem"></div>
-            <button class="btn-variant" onclick="clearHist()" style="margin-top:8px">🗑 Hapus riwayat</button>
+            <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="scOpen('score')" title="Gambar skor sesi terakhir">🖼 Bagikan skor terakhir</button><button class="btn-variant" onclick="clearHist()">🗑 Hapus riwayat</button></div>
         </section>
         <section class="card" data-tab="lagu">
             <div class="card-head"><h2>Lagu</h2><p>Susun bagian lagu (bait, reff), akor berdurasi tiap bagian, dan lirik dengan akor di atasnya. Tersimpan otomatis di browser ini.</p></div>
@@ -188,9 +204,9 @@
                 <label><input type="checkbox" data-sync="metro" checked> Metronom</label>
                 <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label></div>
             <div class="field-label" style="margin:14px 0 6px">Putar</div>
-            <div class="picker-row"><button class="btn-variant" onclick="songPlay()">▶ Putar</button><button class="btn-variant" onclick="stopProgression()">■ Stop</button><button class="btn-variant" onclick="perfOpen()" title="Layar penuh: lirik besar untuk dipakai saat bermain">🎤 Mode Main</button></div>
+            <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="songPlay()">▶ Putar</button><button class="btn-variant" onclick="stopProgression()">■ Stop</button><button class="btn-variant" onclick="perfOpen()" title="Layar penuh: lirik besar untuk dipakai saat bermain">🎤 Mode Main</button></div>
             <div class="field-label" style="margin:14px 0 6px">Susun lagu</div>
-            <div class="picker-row"><button class="btn-variant" onclick="songAddSection()">➕ Bagian</button><button class="btn-variant" onclick="songImportTextToggle()">📋 Tempel teks</button><button class="btn-variant" onclick="songTranspose(-1)" title="Turunkan semua akor 1 nada">♭ Turun 1</button><button class="btn-variant" onclick="songTranspose(1)" title="Naikkan semua akor 1 nada">♯ Naik 1</button></div>
+            <div class="picker-row"><button class="btn-variant" onclick="songAddSection()">➕ Bagian</button><button class="btn-variant" data-tg="imp" aria-pressed="false" onclick="songImportTextToggle()">📋 Tempel teks</button><button class="btn-variant" onclick="songTranspose(-1)" title="Turunkan semua akor 1 nada">♭ Turun 1</button><button class="btn-variant" onclick="songTranspose(1)" title="Naikkan semua akor 1 nada">♯ Naik 1</button></div>
             <div id="impBox" class="imp-box" hidden>
                 <div class="chord-detail-row" style="font-size:.78rem">Tempel lirik dengan akor di baris atasnya (seperti dari situs akor). Judul seperti [Verse] / Reff otomatis jadi bagian baru.</div>
                 <textarea id="impTa" class="song-ta" rows="8" aria-label="Tempel lirik dan akor" placeholder="[Verse 1]
@@ -243,7 +259,7 @@ Hari ini kita mulai"></textarea>
     </aside>
     <div id="perf" class="perf" role="dialog" aria-label="Mode Main" aria-hidden="true">
         <div class="perf-bar picker-row">
-            <button class="btn-variant" onclick="perfPlay()">▶ Putar</button>
+            <button class="btn-variant" data-tg="play" onclick="perfPlay()">▶ Putar</button>
             <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
             <button class="btn-variant" onclick="perfBpm(-5)" aria-label="Lebih lambat">−</button><strong id="perfBpm">80</strong><span class="unit">BPM</span><button class="btn-variant" onclick="perfBpm(5)" aria-label="Lebih cepat">+</button>
             <span class="beat-dot" aria-hidden="true"></span>
@@ -265,15 +281,31 @@ Hari ini kita mulai"></textarea>
             <div id="helpBody"></div>
         </div>
     </div>
-    <div id="pick" class="modal" onclick="if(event.target===this)pkClose()">
-        <div class="modal-box pk-box" role="dialog" aria-label="Pilih akor dari Kamus">
-            <div class="kp-head"><div><strong id="pkTitle">Tambah akor</strong><div id="pkCur" class="kp-sum"></div></div><button class="kp-x" onclick="pkClose()" aria-label="Tutup">×</button></div>
-            <input id="pkSearch" type="search" class="song-in lib-search" placeholder="Cari akor, mis. F#m7, sus4, C/G" autocomplete="off" aria-label="Cari akor" oninput="pkSearch(this.value)">
-            <div id="pkRoots" class="chips" role="group" aria-label="Nada dasar"></div>
-            <div id="pkCats" class="chips" role="group" aria-label="Jenis akor"></div>
-            <div id="pkCount" class="chord-detail-row" style="margin-top:6px"></div>
-            <div id="pkGrid" class="lib-grid"></div>
-            <button class="btn-primary" onclick="pkClose()">Selesai</button>
+    <div id="look" class="modal" onclick="if(event.target===this)lookToggle(false)">
+        <div class="modal-box" role="dialog" aria-label="Tampilan">
+            <div class="kp-head"><div><strong>Tampilan</strong><div class="kp-sum">Tema dan Mode Panggung, disimpan di perangkat ini</div></div><button class="kp-x" onclick="lookToggle(false)" aria-label="Tutup">×</button></div>
+            <div class="field-label">Tema</div>
+            <div id="lookThemes" class="chips" role="group" aria-label="Tema"></div>
+            <div class="field-label" style="margin:14px 0 8px">Mode Panggung</div>
+            <div class="picker-row"><label><input type="checkbox" id="stageChk" onchange="setStage(this.checked)"> Kontras tinggi, huruf lebih besar, layar tetap menyala</label></div>
+            <p class="ac-fine">Cocok untuk bermain di luar ruangan atau di panggung. Otomatis mengikuti pengaturan terang/gelap ponsel bila memilih Otomatis.</p>
+        </div>
+    </div>
+    <div id="cpick" class="modal" onclick="if(event.target===this)cpClose()">
+        <div class="modal-box" role="dialog" aria-label="Pilih akor dari Kamus">
+            <div class="kp-head"><div><strong>Pilih Akor dari Kamus</strong><div id="cpInfo" class="kp-sum"></div></div><button class="kp-x" onclick="cpClose()" aria-label="Tutup">×</button></div>
+            <input id="cpSearch" type="search" class="song-in lib-search" placeholder="Cari akor, mis. F#m7, sus4, C/G" autocomplete="off" aria-label="Cari akor" oninput="cpSearch(this.value)">
+            <div id="cpRoots" class="chips" role="group" aria-label="Nada dasar"></div>
+            <div id="cpCats" class="chips" role="group" aria-label="Jenis akor"></div>
+            <div id="cpGrid" class="cp-grid"></div>
+            <div class="kp-actions"><button class="btn-primary" onclick="cpClose()">Selesai</button></div>
+        </div>
+    </div>
+    <div id="share" class="modal" onclick="if(event.target===this)scClose()">
+        <div class="modal-box" role="dialog" aria-label="Kartu bagikan">
+            <div class="kp-head"><div><strong>Kartu Bagikan</strong><div class="kp-sum">Gambar 1080×1920, pas untuk Story &amp; WhatsApp</div></div><button class="kp-x" onclick="scClose()" aria-label="Tutup">×</button></div>
+            <img id="scImg" class="sc-img" alt="Pratinjau kartu bagikan">
+            <div class="kp-actions"><button class="btn-primary" onclick="scShare()">📤 Bagikan</button><button class="btn-variant" onclick="scSave()">⬇ Unduh PNG</button></div>
         </div>
     </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -303,9 +335,13 @@ Hari ini kita mulai"></textarea>
     <script src="js/practice.js"></script>
     <script src="js/chord-library.js"></script>
     <script src="js/song.js"></script>
-    <script src="js/chord-picker.js"></script>
     <script src="js/store.js"></script>
     <script src="js/extras.js"></script>
+    <script src="js/share.js"></script>
+    <script src="js/chord-pick.js"></script>
+    <script src="js/fx.js"></script>
+    <script src="js/finger-move.js"></script>
+    <script src="js/theme.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/supabase-config.js"></script>
     <script src="js/sync.js"></script>

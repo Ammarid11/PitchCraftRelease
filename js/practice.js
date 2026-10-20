@@ -51,7 +51,7 @@ function drillNext() {
     if (dr.mode === 'drill') dr.i = (dr.i + 1) % pool.length;
     else { let n; do { n = Math.floor(Math.random() * pool.length); } while (pool.length > 1 && n === dr.i); dr.i = n; }
     dr.target = pool[dr.i];
-    document.getElementById('drillTarget').textContent = dr.target; drillShowFret(dr.target);
+    document.getElementById('drillTarget').textContent = dr.target;
     document.getElementById('drillInfo').textContent = `Genjreng ${dr.target} · benar ${dr.ok}, salah ${dr.bad}`;
 }
 
@@ -72,17 +72,9 @@ async function drillStart() {
             const cpm = Math.round(dr.ok / dr.dur * 600) / 10, h = loadHist();
             h.push({ t: Date.now(), mode: dr.mode, level: dr.level, dur: dr.dur, ok: dr.ok, bad: dr.bad, cpm }); saveHist(h);
             document.getElementById('drillInfo').textContent = `Selesai! Benar ${dr.ok}, salah ${dr.bad} · ${cpm} akor/menit`;
-            document.getElementById('drillTarget').textContent = '🏁'; drillShowFret(''); dr = null; clearInterval(drTimer); renderHist();
+            document.getElementById('drillTarget').textContent = '🏁'; dr = null; clearInterval(drTimer); renderHist();
         } else document.getElementById('drillInfo').textContent = `${left} dtk · genjreng ${dr.target} · benar ${dr.ok}, salah ${dr.bad}`;
     }, 500);
 }
 
-function drillStop() { dr = null; clearInterval(drTimer); document.getElementById('drillTarget').textContent = '—'; drillShowFret(''); document.getElementById('drillInfo').textContent = 'Dihentikan (skor tidak disimpan).'; }
-
-// Diagram fret untuk akor yang diminta. Target = akor yang TERDENGAR; yang digambar = bentuk jarinya (dikurangi capo).
-function drillShowFret(key) {
-    const el = document.getElementById('drillFret'); if (!el) return;
-    const capo = getCapo(), shape = key ? tKey(key, -capo) : '', ch = key ? (chordDatabase[shape] || chordDatabase[key]) : null;
-    if (!ch) { el.innerHTML = ''; return; }
-    el.innerHTML = `<div class="chord-detail-row" style="margin-top:8px">${esc(ch.name)} · nada: <strong>${ch.notes.join(' - ')}</strong>${capo ? `<br>Capo ${capo}: mainkan bentuk <strong>${esc(ch.key)}</strong>` : ''}</div>${fretboardHTML(ch.variants[0].fingering)}`;
-}
+function drillStop() { dr = null; clearInterval(drTimer); document.getElementById('drillTarget').textContent = '—'; document.getElementById('drillInfo').textContent = 'Dihentikan (skor tidak disimpan).'; }
