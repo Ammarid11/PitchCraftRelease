@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -26,6 +28,8 @@
             </div>
         </div>
         <button id="keyPill" class="keypill" onclick="kpToggle(true)" aria-haspopup="dialog">🎼 Kunci C · tanpa capo</button>
+        <button id="acctBtn" class="keypill" onclick="acctToggle(true)" aria-haspopup="dialog">👤 Akun</button>
+        <button id="installBtn" class="keypill" hidden onclick="pcInstall()">⬇ Pasang</button>
     </header>
 
     <main class="container">
@@ -111,7 +115,7 @@
             <button class="btn-secondary" onclick="addToProgression()" style="width:100%">➕ Tambah Akor Saat Ini</button>
             <div id="progList" class="detected-list" style="margin-top:10px"><span class="empty-list">Belum ada progresi.</span></div>
             <div class="picker-row" style="margin-top:12px">
-                <input id="bpm" data-sync="bpm" type="number" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span>
+                <input id="bpm" data-sync="bpm" type="number" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span><button class="btn-variant" onclick="pcTap()">👆 Tap</button><span class="beat-dot" aria-hidden="true"></span>
                 <label><input type="checkbox" id="metroChk" data-sync="metro" checked> Metronom</label>
                 <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label>
                 <button class="btn-variant" onclick="playProgression()">▶ Putar</button>
@@ -155,6 +159,7 @@
         </section>
         <section class="card" data-tab="latih">
             <div class="card-head"><h2>Latihan &amp; Kuis</h2><p>Genjreng akor yang diminta; Mode Strum mengecek jawabanmu. Pilih tingkat dan durasi sesi (30/60/120 detik).</p></div>
+            <div id="streakBox" class="streak-box"></div>
             <div class="picker-row"><select id="drillMode"><option value="drill">Pindah akor (dari Progresi)</option><option value="quiz">Kuis akor acak (dari Kunci)</option><option value="level">Kuis menurut tingkat</option></select>
                 <select id="drillLevel" aria-label="Tingkat"><option value="dasar">Dasar (akor terbuka)</option><option value="barre">Barre</option><option value="seventh">7th &amp; sus</option></select>
                 <select id="drillDur" aria-label="Durasi"><option value="30">30 dtk</option><option value="60" selected>60 dtk</option><option value="120">120 dtk</option></select>
@@ -168,7 +173,7 @@
             <div class="card-head"><h2>Lagu</h2><p>Susun bagian lagu (bait, reff), akor berdurasi tiap bagian, dan lirik dengan akor di atasnya. Tersimpan otomatis di browser ini.</p></div>
             <div class="picker-row"><input id="songName" type="text" class="song-in" placeholder="Judul lagu" maxlength="80" aria-label="Judul lagu" onchange="song.name=this.value.slice(0,80)">
                 <label>Birama <select data-sync="meter" onchange="setMeter(this.value)"><option>4/4</option><option>3/4</option><option>6/8</option></select></label></div>
-            <div class="picker-row" style="margin-top:8px"><input type="number" data-sync="bpm" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span>
+            <div class="picker-row" style="margin-top:8px"><input type="number" data-sync="bpm" value="80" min="40" max="200" aria-label="BPM"><span class="unit">BPM</span><button class="btn-variant" onclick="pcTap()">👆 Tap</button><span class="beat-dot" aria-hidden="true"></span>
                 <label><input type="checkbox" data-sync="metro" checked> Metronom</label>
                 <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label></div>
             <div class="picker-row" style="margin-top:8px">
@@ -176,7 +181,18 @@
                 <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
                 <button class="btn-variant" onclick="songTranspose(-1)">♭ −1</button>
                 <button class="btn-variant" onclick="songTranspose(1)">♯ +1</button>
-                <button class="btn-variant" onclick="songAddSection()">➕ Bagian</button></div>
+                <button class="btn-variant" onclick="songAddSection()">➕ Bagian</button>
+                <button class="btn-variant" onclick="songImportTextToggle()">📋 Tempel teks</button>
+                <button class="btn-variant" onclick="perfOpen()">🎤 Mode Main</button></div>
+            <div id="impBox" class="imp-box" hidden>
+                <div class="chord-detail-row" style="font-size:.78rem">Tempel lirik dengan akor di baris atasnya (seperti dari situs akor). Judul seperti [Verse] / Reff otomatis jadi bagian baru.</div>
+                <textarea id="impTa" class="song-ta" rows="8" aria-label="Tempel lirik dan akor" placeholder="[Verse 1]
+   Am         G
+Selamat pagi dunia
+   F          C
+Hari ini kita mulai"></textarea>
+                <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="songImportTextRun()">✓ Ubah jadi bagian lagu</button><button class="btn-variant" onclick="songImportTextToggle(false)">Batal</button></div>
+            </div>
             <div class="picker-row" style="margin-top:8px">
                 <button class="btn-variant" onclick="songExport()">⬇ Ekspor .json</button>
                 <button class="btn-variant" onclick="document.getElementById('songFile').click()">⬆ Impor .json</button>
@@ -218,6 +234,24 @@
             <div id="capoBest" class="chord-detail-row" style="margin-top:12px"></div>
         </div>
     </aside>
+    <div id="perf" class="perf" role="dialog" aria-label="Mode Main" aria-hidden="true">
+        <div class="perf-bar picker-row">
+            <button class="btn-variant" onclick="perfPlay()">▶ Putar</button>
+            <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
+            <button class="btn-variant" onclick="perfBpm(-5)" aria-label="Lebih lambat">−</button><strong id="perfBpm">80</strong><span class="unit">BPM</span><button class="btn-variant" onclick="perfBpm(5)" aria-label="Lebih cepat">+</button>
+            <span class="beat-dot" aria-hidden="true"></span>
+            <button class="btn-variant" onclick="perfFont(-2)" aria-label="Huruf lebih kecil">A−</button><button class="btn-variant" onclick="perfFont(2)" aria-label="Huruf lebih besar">A+</button>
+            <label><input type="checkbox" id="perfMute"> Tanpa suara akor</label>
+            <button class="kp-x" onclick="perfClose()" aria-label="Tutup">×</button>
+        </div>
+        <div id="perfView" class="perf-view"></div>
+    </div>
+    <div id="acct" class="modal" onclick="if(event.target===this)acctToggle(false)">
+        <div class="modal-box" role="dialog" aria-label="Akun dan data">
+            <div class="kp-head"><div><strong>Akun &amp; Data</strong><div class="kp-sum">Sinkron progres antar perangkat</div></div><button class="kp-x" onclick="acctToggle(false)" aria-label="Tutup">×</button></div>
+            <div id="acctBody"></div>
+        </div>
+    </div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <nav class="tabbar" id="tabbar">
         <button data-go="deteksi" class="on"><span>🎸</span>Deteksi</button>
@@ -245,7 +279,11 @@
     <script src="js/practice.js"></script>
     <script src="js/chord-library.js"></script>
     <script src="js/song.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/extras.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/sync.js"></script>
     <script src="js/init.js"></script>
 
 </body>

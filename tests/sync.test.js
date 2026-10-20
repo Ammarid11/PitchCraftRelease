@@ -1,0 +1,119 @@
+/* Pitchcraft — tes mesin sinkron dengan server palsu (di memori) dan dua "perangkat".
+ * Jalankan:  node tests/sync.test.js
+ * Yang diuji: logika gabung (sesi, lencana, lagu, konflik, pengaturan). Adapter Supabase asli (dbReal) TIDAK diuji di sini. */
+const fs = require('fs'), path = require('path'), vm = require('vm'), nodeCrypto = require('crypto');
+const ROOT = path.join(__dirname, '..');
+let fails = 0; const ok = (c, m) => { console.log((c ? 'LULUS  ' : 'GAGAL  ') + m); if (!c) fails++; };
+
+// ---- server palsu: perilaku sama dengan skema (waktu server, cek updated_at, sesi append-only, kunci (user_id,id)) ----
+function makeServer() {
+    let clock = Date.parse('2026-10-20T00:00:00Z');
+    const tick = () => new Date(clock += 1000).toISOString();
+    const S = { sessions: new Map(), badges: new Set(), songs: new Map(), settings: null, calls: [] };
+    S.db = {
+        async getDoc(kind, id) { S.calls.push('get:' + kind); return kind === 'song' ? (id ? S.songs.get(id) : [...S.songs.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0]) || null : S.settings; },
+        async insertDoc(kind, row) {
+            S.calls.push('insert:' + kind); const r = Object.assign({}, row, { updated_at: tick() });
+            if (kind === 'song') { if (S.songs.has(row.id)) { const e = new Error('dup'); e.code = '23505'; throw e; } S.songs.set(row.id, r); }
+            else { if (S.settings) { const e = new Error('dup'); e.code = '23505'; throw e; } S.settings = r; }
+            return r.updated_at;
+        },
+        async updateDoc(kind, id, data, base) {
+            S.calls.push('update:' + kind); const r = kind === 'song' ? S.songs.get(id) : S.settings;
+            if (!r || r.updated_at !== base) return null; r.data = JSON.parse(JSON.stringify(data)); r.updated_at = tick(); return r.updated_at;
+        },
+        async sessionsSince(cur) { return [...S.sessions.values()].filter(r => Date.parse(r.created_at) > Date.parse(cur)); },
+        async upsertSessions(rows) { S.calls.push('sessions:' + rows.length); const t = tick(); rows.forEach(r => { if (!S.sessions.has(r.id)) S.sessions.set(r.id, Object.assign({}, r, { created_at: t })); }); },
+        async badgesAll() { return [...S.badges]; },
+        async upsertBadges(rows) { rows.forEach(r => S.badges.add(r.badge_id)); }
+    };
+    return S;
+}
+
+// ---- perangkat: kode asli store.js + sync.js di sandbox sendiri, dengan stub untuk bagian UI app ----
+function makeDevice() {
+    const store = {}, el = () => ({ addEventListener() {}, classList: { add() {}, remove() {}, toggle() {} }, style: {}, set innerHTML(v) {}, set textContent(v) {} });
+    const ctx = vm.createContext({ console, Math, JSON, Date, Set, Map, Object, Array, Number, String, Promise, isNaN, parseInt, setTimeout, clearTimeout,
+        localStorage: { getItem: k => k in store ? store[k] : null, setItem: (k, v) => { store[k] = String(v); }, removeItem: k => { delete store[k]; } },
+        crypto: { randomUUID: () => nodeCrypto.randomUUID() }, navigator: { onLine: true }, window: { addEventListener() {} },
+        document: { addEventListener() {}, getElementById: () => null, createElement: el, querySelectorAll: () => [], head: el(), body: el() }, location: { origin: 'http://x', pathname: '/' }, confirm: () => true, alert() {} });
+    vm.runInContext(`
+        const PC_KEY = 'pc_settings', toasts = [];
+        const BADGES = [['first'], ['st3'], ['goal']];
+        const esc = s => String(s), pcToast = m => toasts.push(m);
+        const newSection = () => ({ name: 'Bait 1', lyrics: '', chords: [] });
+        const cleanSong = d => ({ name: String(d.name || ''), meter: d.meter || '4/4', sections: (d.sections || []).map(s => ({ name: s.name, lyrics: s.lyrics || '', chords: s.chords || [] })) });
+        let song = { name: '', meter: '4/4', sections: [newSection()] }, progression = [], appBpm = 80;
+        const collectSettings = () => ({ v: 1, progression, song, bpm: appBpm });
+        function loadSettings() { const s = JSON.parse(localStorage.getItem(PC_KEY)); if (s) { progression = s.progression || []; appBpm = s.bpm; } }
+        function saveSettings() {}
+        const noop = () => {}; var renderTuning = noop, renderKey = noop, renderPat = noop, renderProgression = noop, renderSong = noop, refreshChordViews = noop, renderStreak = noop;
+    `, ctx);
+    ['store.js', 'sync.js'].forEach(f => vm.runInContext(fs.readFileSync(path.join(ROOT, 'js', f), 'utf8'), ctx, { filename: f }));
+    const dev = { ctx, store, run: c => vm.runInContext(c, ctx) };
+    dev.addSession = (dur, day) => dev.run(`(() => { const s = getSessions(); s.push({ id: newId(), mode: 'level', level: 'dasar', dur: ${dur}, ok: 9, bad: 1, cpm: 12, played_at: '${day}T10:00:00.000Z', day: '${day}' }); setSessions(s); })()`);
+    dev.days = () => dev.run('daysOf(getSessions())');
+    dev.sync = (S, uid = 'u1') => vm.runInContext('syncOnce', ctx)(S.db, uid);
+    dev.setSong = t => dev.run(`song = { name: 'T', meter: '4/4', sections: [{ name: 'Bait', lyrics: ${JSON.stringify(t)}, chords: [] }] }`);
+    dev.songText = () => dev.run('song.sections[0].lyrics');
+    return dev;
+}
+
+(async () => {
+    // 1. dua perangkat, hari yang sama: 60 dtk + 120 dtk harus jadi 180 (bukan 120)
+    let S = makeServer(), A = makeDevice(), B = makeDevice();
+    A.addSession(60, '2026-10-20'); B.addSession(120, '2026-10-20');
+    await A.sync(S); await B.sync(S); await A.sync(S);
+    ok(A.days()['2026-10-20'] === 180 && B.days()['2026-10-20'] === 180, 'total harian dari dua perangkat = 180 dtk di keduanya');
+    ok(S.sessions.size === 2, 'server berisi 2 sesi, tanpa duplikat');
+
+    // 2. sinkron berulang tidak mendorong ulang apa pun
+    S.calls.length = 0; await A.sync(S); await A.sync(S);
+    ok(!S.calls.some(c => c.startsWith('sessions') || c.startsWith('update') || c.startsWith('insert')), 'sinkron ulang tanpa perubahan tidak menulis ke server');
+
+    // 3. lagu dari A muncul di B (B masih lagu kosong)
+    A.setSong('[Am]halo'); await A.sync(S); await B.sync(S);
+    ok(B.songText() === '[Am]halo', 'lagu A diadopsi perangkat B');
+
+    // 4. hanya B yang mengedit -> A mengikuti, tanpa konflik
+    B.setSong('[G]dunia'); await B.sync(S); await A.sync(S);
+    ok(A.songText() === '[G]dunia' && !A.store.pc_conflicts, 'edit satu sisi merambat tanpa konflik');
+
+    // 5. keduanya mengedit saat offline -> versi lokal yang kalah disimpan, bukan hilang
+    A.setSong('[C]versi A'); B.setSong('[D]versi B');
+    await A.sync(S); await B.sync(S);
+    const conf = B.store.pc_conflicts ? JSON.parse(B.store.pc_conflicts) : {};
+    ok(B.songText() === '[C]versi A', 'konflik: B memakai versi server (A)');
+    ok(conf.song && conf.song.data.sections[0].lyrics === '[D]versi B', 'konflik: versi B tersimpan, tidak hilang diam-diam');
+    B.run("restoreConflict('song')"); await B.sync(S); await A.sync(S);
+    ok(A.songText() === '[D]versi B', 'pemulihan konflik mendorong versi B ke server & A');
+
+    // 6. lencana: gabungan, tidak dicabut
+    S = makeServer(); A = makeDevice(); B = makeDevice();
+    A.run("lsSet('pc_badges', ['first'])"); B.run("lsSet('pc_badges', ['st3'])");
+    await A.sync(S); await B.sync(S); await A.sync(S);
+    ok(A.run("lsGet('pc_badges', []).sort().join()") === 'first,st3' && B.run("lsGet('pc_badges', []).sort().join()") === 'first,st3', 'lencana digabung di kedua perangkat');
+
+    // 7. perangkat baru: pengaturan bawaan tidak dianggap konflik; progresi lama ikut
+    A.run("progression = [{key:'Am',v:0}]"); await A.sync(S);
+    const C = makeDevice(); await C.sync(S);
+    ok(C.run('progression.length') === 1 && !C.store.pc_conflicts, 'perangkat baru menerima progresi tanpa konflik palsu');
+
+    // 8. migrasi data lama: pc_days -> sesi ber-ID tetap, tidak ganda
+    const D = makeDevice(); D.store.pc_days = JSON.stringify({ '2026-10-01': 300 });
+    D.run("localStorage.removeItem('pc_migr2'); localStorage.removeItem('pc_sessions')"); D.run('migrateLegacy(); migrateLegacy()');
+    ok(D.run('getSessions().length') === 1 && D.run('getSessions()[0].id') === 'legacy-2026-10-01', 'migrasi pc_days menjadi 1 sesi legacy, aman diulang');
+
+    // 9. data jelek ditolak
+    ok(D.run("cleanSession({id:'x',day:'bukan-tanggal',played_at:'2026-01-01'})") === null && D.run("cleanSession({id:'',day:'2026-01-01',played_at:'2026-01-01'})") === null, 'sesi tidak valid ditolak');
+
+    // 10. server menolak pembaruan berbasis versi lama (kondisi balapan) -> ulang, bukan menimpa
+    S = makeServer(); A = makeDevice(); B = makeDevice();
+    A.setSong('[Am]satu'); await A.sync(S); await B.sync(S);
+    A.setSong('[Am]dua'); let hijacked = false; const orig = S.db.updateDoc;
+    S.db.updateDoc = async (...a) => { if (!hijacked) { hijacked = true; const r = [...S.songs.values()][0]; r.data = { name: 'T', meter: '4/4', sections: [{ name: 'Bait', lyrics: '[X]dari B', chords: [] }] }; r.updated_at = '2030-01-01T00:00:00.000Z'; } return orig(...a); };
+    await A.sync(S);
+    ok(A.songText() === '[X]dari B' && A.store.pc_conflicts, 'balapan terdeteksi: versi server dipakai, edit lokal disimpan sebagai konflik');
+
+    console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes sinkron lulus'); process.exit(fails ? 1 : 0);
+})().catch(e => { console.error(e); process.exit(1); });

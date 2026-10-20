@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#090a0f">
+    <meta name="color-scheme" content="dark">
+    <title>Kebijakan Privasi — Pitchcraft</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .doc { max-width: 720px; margin: 0 auto; }
+        .doc h2 { margin: 1.6rem 0 .5rem; }
+        .doc p, .doc li { font-size: .92rem; color: var(--text-muted); margin-bottom: .5rem; }
+        .doc li strong, .doc p strong { color: var(--text-main); }
+        .doc ul { padding-left: 1.2rem; }
+        .doc a { color: #c4b5fd; }
+        .doc table { width: 100%; border-collapse: collapse; font-size: .85rem; margin: .5rem 0 1rem; display: block; overflow-x: auto; }
+        .doc th, .doc td { border: 1px solid var(--surface-border); padding: 8px 10px; text-align: left; vertical-align: top; color: var(--text-muted); }
+        .doc th { color: var(--text-main); background: var(--surface-2); }
+        .doc code { color: #c4b5fd; }
+        body { padding-bottom: 3rem !important; }
+    </style>
+</head>
+<body>
+<main class="doc">
+    <p><a href="index.html">← Kembali ke Pitchcraft</a></p>
+    <h1 style="margin-top:1rem">Kebijakan Privasi</h1>
+    <p>Terakhir diperbarui: 20 Oktober 2026</p>
+
+    <h2>Ringkasnya</h2>
+    <ul>
+        <li><strong>Suara mikrofon tidak pernah dikirim ke mana pun.</strong> Deteksi nada dan akor berjalan sepenuhnya di perangkatmu, dan audio tidak direkam atau disimpan.</li>
+        <li>Pitchcraft berjalan penuh <strong>tanpa akun</strong>. Tanpa login, datamu hanya ada di browser perangkat ini.</li>
+        <li>Data baru dikirim ke server <strong>hanya jika kamu masuk</strong> ke akun, supaya progres bisa dibuka di perangkat lain.</li>
+        <li>Kamu bisa mengekspor datamu dan menghapus akun beserta semua datanya dari dalam app.</li>
+    </ul>
+
+    <h2>Data yang disimpan di perangkatmu</h2>
+    <p>Disimpan di <code>localStorage</code> browser, baik kamu masuk maupun tidak:</p>
+    <ul>
+        <li>riwayat sesi latihan, lencana, dan streak;</li>
+        <li>lagu aktif (judul, bagian, akor, lirik), progresi, dan akor tersimpan;</li>
+        <li>pengaturan (tuning, capo, kunci, tempo, mode kidal, dan sejenisnya);</li>
+        <li>pola akor yang kamu konfirmasi benar di Mode Strum (hanya angka perbandingan nada, bukan rekaman suara).</li>
+    </ul>
+    <p>Menghapus data situs di browser akan menghapus semuanya. Karena itu, gunakan ekspor progres di dialog Akun untuk membuat cadangan.</p>
+
+    <h2>Data yang dikirim ke server (hanya jika kamu masuk)</h2>
+    <table>
+        <tr><th>Data</th><th>Isi</th></tr>
+        <tr><td>Akun</td><td>Alamat email yang kamu pakai untuk masuk. Jika memakai Google, informasi akun dasar yang diteruskan Google ke layanan login.</td></tr>
+        <tr><td>Sesi latihan</td><td>Mode, tingkat, durasi, jumlah benar/salah, akor per menit, waktu sesi, dan tanggal lokal sesi.</td></tr>
+        <tr><td>Lencana</td><td>Daftar lencana yang sudah kamu raih.</td></tr>
+        <tr><td>Lagu</td><td>Lagu aktif: judul, bagian, akor, dan lirik yang kamu tulis.</td></tr>
+        <tr><td>Pengaturan</td><td>Pengaturan app dan progresi akor.</td></tr>
+    </table>
+    <p><strong>Tidak pernah dikirim:</strong> audio mikrofon, hasil analisis suara mentah, dan lokasi.</p>
+    <p>Data tiap akun dilindungi aturan akses di database (Row Level Security) sehingga pengguna lain tidak dapat membaca atau mengubahnya.</p>
+
+    <h2>Layanan pihak ketiga</h2>
+    <ul>
+        <li><strong>Supabase</strong> menyimpan akun dan data sinkron.</li>
+        <li><strong>Google</strong> hanya dipakai jika kamu memilih "Masuk dengan Google".</li>
+        <li><strong>Google Fonts</strong> memuat huruf saat halaman dibuka. <strong>jsDelivr</strong> memuat pustaka login (<code>supabase-js</code>) bila fitur akun aktif. Saat memuat file dari layanan ini, mereka dapat menerima alamat IP dan data teknis browsermu seperti pada situs web umumnya.</li>
+    </ul>
+
+    <h2>Lama penyimpanan dan penghapusan</h2>
+    <ul>
+        <li>Data di server disimpan selama akunmu ada.</li>
+        <li><strong>Hapus akun &amp; data server</strong> di dialog 👤 Akun menghapus akun dan semua baris datamu di server secara permanen.</li>
+        <li><strong>Keluar &amp; hapus data di perangkat ini</strong> menghapus data lokal tanpa menghapus akun.</li>
+        <li><strong>Ekspor progres</strong> mengunduh datamu sebagai file <code>.json</code>.</li>
+    </ul>
+
+    <h2>Anak-anak</h2>
+    <p>Pitchcraft tidak ditujukan untuk mengumpulkan data pribadi anak secara khusus. Pengguna yang masih di bawah umur sebaiknya memakai app ini dengan sepengetahuan orang tua atau wali.</p>
+
+    <h2>Perubahan kebijakan</h2>
+    <p>Jika kebijakan ini berubah, tanggal "Terakhir diperbarui" di atas akan ikut berubah.</p>
+
+    <h2>Kontak</h2>
+    <p>Pengelola: <strong>[ISI NAMA PENGELOLA]</strong><br>Pertanyaan atau permintaan terkait data: <strong>[ISI EMAIL KONTAK]</strong></p>
+</main>
+</body>
+</html>
