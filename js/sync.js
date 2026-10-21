@@ -197,7 +197,7 @@ async function sbLoad() {
 }
 
 function wipeLocal() {
-    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog', 'pc_miss'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
+    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog', 'pc_miss', 'pc_voice', 'pc_ear'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
     song = { name: '', meter: '4/4', sections: [newSection()] }; progression = [];
     try { renderSong(); renderProgression(); renderStreak(); } catch (e) { }
 }

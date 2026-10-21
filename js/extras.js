@@ -40,7 +40,9 @@ const BADGES = [
     ['seventh', '🎷', '7th & sus lulus', c => passed(c.hist, 'seventh')],
     ['goal', '🎯', 'Target harian', c => c.today >= DAY_GOAL],
     ['st3', '🔥', 'Streak 3 hari', c => c.streak >= 3],
-    ['st7', '🏆', 'Streak 7 hari', c => c.streak >= 7]
+    ['st7', '🏆', 'Streak 7 hari', c => c.streak >= 7],
+    ['ear', '👂', 'Telinga tajam', c => c.hist.some(e => e.mode === 'ear' && e.ok >= 8 && e.ok >= 2 * e.bad)],
+    ['ear2', '🎼', 'Telinga musikal', c => c.hist.some(e => e.mode === 'ear' && /^(interval|progresi|melodi|nada)-/.test(e.level) && e.ok >= 8 && e.ok >= 2 * e.bad)]
 ];
 const passed = (hist, lvl) => hist.some(e => e.mode === 'level' && e.level === lvl && e.ok >= 8 && e.ok >= 2 * e.bad);
 

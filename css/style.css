@@ -1478,3 +1478,58 @@ body::before { content: ""; position: fixed; inset: -25%; z-index: -1; pointer-e
 #mvInfo { margin-top: 10px; font-size: .82rem; line-height: 1.55; }
 [data-theme="light"] .mv-svg { background: #f1f4f9; }
 [data-theme="light"] .mv-wrap[data-ph="0"] .mv-a, [data-theme="light"] .mv-wrap[data-ph="1"] .mv-b { color: #6d28d9; }
+
+/* ===== Cari Kunci Suaramu (js/voice-range.js) ===== */
+.vc-now { text-align: center; }
+.vc-range { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0 4px; }
+.vc-box { min-width: 0; padding: 10px 6px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--surface-border); text-align: center; display: flex; flex-direction: column; line-height: 1.2; }
+.vc-box span { font-size: .7rem; color: var(--text-muted); }
+.vc-box strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; overflow-wrap: anywhere; }
+.vc-fit { font-size: .82rem; line-height: 1.5; color: var(--text-muted); margin-top: 12px; }
+.vc-fit strong { color: var(--text-main); }
+.vc-cand { margin-top: 10px; padding: 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--surface-border); }
+.vc-cand.best { border-color: var(--primary); background: rgba(139,92,246,.1); }
+.vc-cand-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.vc-cand-top strong { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; }
+.vc-tag { font-size: .7rem; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--primary); color: #ddd6fe; }
+.vc-cand small { color: var(--text-muted); font-weight: 500; }
+[data-theme="light"] .vc-tag { color: #5b21b6; }
+.vc-adj { margin-top: 8px; gap: 6px; }
+.vc-adj span { flex: 1 1 100%; font-size: .74rem; color: var(--text-muted); }
+.vc-adj .btn-variant { flex: 1 1 0; min-width: 0; padding: 6px 4px; }
+.vc-cand.shift { border-color: var(--success); background: rgba(16,185,129,.08); margin-top: 12px; }
+
+/* ===== Pilihan nada dasar: semua 12 nada terlihat (tidak lagi tergeser ke samping) ===== */
+#cpRoots, #libRoots { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; overflow: visible; padding: 4px 0 6px; }
+#cpRoots .chip, #libRoots .chip { min-width: 0; padding: 4px 2px; }
+
+/* ===== Latih Telinga (js/ear-training.js) ===== */
+.ear-stage { margin-top: 12px; }
+.ear-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: .85rem; color: var(--text-muted); }
+.ear-top strong { color: var(--text-main); font-family: 'Space Grotesk', sans-serif; font-size: 1rem; }
+.ear-dots { display: flex; gap: 5px; margin: 8px 0 12px; }
+.ear-dots i { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.12); }
+.ear-dots i.cur { background: var(--primary); }
+.ear-dots i.ok { background: var(--success); }
+.ear-dots i.bad { background: var(--danger); }
+.ear-play { width: 100%; min-height: 56px; font-size: 1rem; }
+.ear-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-top: 10px; }
+.ear-opt { min-height: 54px; border-radius: 14px; background: rgba(139,92,246,.18); color: var(--text-main); border: 1px solid var(--primary); font-size: .95rem; }
+.ear-opt:hover { background: rgba(139,92,246,.32); }
+.ear-opt.right { background: rgba(16,185,129,.25); border-color: var(--success); }
+.ear-opt.wrong { background: rgba(239,68,68,.2); border-color: var(--danger); }
+.ear-fb { margin-top: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid; font-size: .85rem; line-height: 1.5; }
+.ear-fb small { color: var(--text-muted); }
+.ear-fb.ok { color: #a7f3d0; border-color: rgba(16,185,129,.5); background: rgba(16,185,129,.1); }
+.ear-fb.bad { color: #fca5a5; border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.1); }
+.ear-score { text-align: center; }
+.ear-score b { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 3.6rem; line-height: 1; }
+.ear-score span { color: var(--text-muted); font-size: .85rem; }
+[data-theme="light"] .ear-fb.ok { color: #065f46; }
+[data-theme="light"] .ear-fb.bad { color: #b91c1c; }
+[data-theme="light"] .ear-dots i { background: rgba(15,23,42,.14); }
+[data-theme="light"] .ear-opt { color: #3b0764; }
+.stage .ear-opt { min-height: 58px; }
+
+/* Latih Telinga: opsi yang disembunyikan untuk jenis latihan tertentu */
+.picker-row label[hidden] { display: none; }

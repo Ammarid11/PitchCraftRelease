@@ -54,22 +54,23 @@ function mvSvg(A, B, P) {
         }
         h += `<g class="ph${p}">${m}</g>`;
     });
-    const dot = (fill, n0, n1, extra) => `<circle r="8" fill="${fill}" ${extra || ''}/>` +
+    const dot = (fill, n0, n1, extra) => `<circle r="8.5" fill="${fill}" style="fill:${fill}" stroke="#fff" stroke-opacity=".9" stroke-width="1.2" ${extra || ''}/>` +
         `<text class="ph0" y="3.5" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${n0}</text><text class="ph1" y="3.5" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">${n1}</text>`;
     P.stay.forEach(d => { h += `<g transform="translate(${sx(d.s)},${cy(d.fr)})">${dot('#10b981', d.an, d.bn)}</g>`; });
     P.out.forEach(d => { h += `<g class="mv-out" transform="translate(${sx(d.s)},${cy(d.fr)})">${dot('#ef4444', d.n, d.n, 'fill-opacity=".6"')}</g>`; });
     P.inn.forEach(d => { h += `<g class="mv-in" transform="translate(${sx(d.s)},${cy(d.fr)})">${dot('#38bdf8', d.n, d.n)}</g>`; });
-    P.move.forEach(m => { h += `<g class="mv-move" style="--ax:${sx(m.a.s)}px;--ay:${cy(m.a.fr)}px;--bx:${sx(m.b.s)}px;--by:${cy(m.b.fr)}px">${dot('#8b5cf6', m.a.n, m.b.n)}</g>`; });
+    P.move.forEach(m => { h += `<g class="mv-move" transform="translate(${sx(m.a.s)},${cy(m.a.fr)})" style="--ax:${sx(m.a.s)}px;--ay:${cy(m.a.fr)}px;--bx:${sx(m.b.s)}px;--by:${cy(m.b.fr)}px">${dot('#8b5cf6', m.a.n, m.b.n)}</g>`; });
     return `<svg class="mv-svg" viewBox="0 0 160 ${bot + 22}" role="img" aria-label="Perpindahan jari dari ${esc(A.key)} ke ${esc(B.key)}">${h}</svg>`;
 }
 
 function mvInfoHTML(A, B, P) {
     if (A.key === B.key && A.raw.join() === B.raw.join()) return 'Kedua akor sama, jadi tidak ada jari yang berpindah. Pilih akor tujuan yang berbeda.';
     const str = d => 'senar ' + (6 - d.s) + ', fret ' + d.fr;
-    let h = `<strong>${P.stay.length}</strong> jari tetap · <strong>${P.move.length}</strong> berpindah · ${P.out.length} diangkat · ${P.inn.length} diletakkan`;
-    P.move.forEach(m => { h += `<br>Jari ${m.a.n}: ${str(m.a)} → ${str(m.b)}`; });
-    P.out.forEach(d => { h += `<br>Angkat jari ${d.n} (${str(d)})`; });
-    P.inn.forEach(d => { h += `<br>Letakkan jari ${d.n} (${str(d)})`; });
+    const dot = c => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${c}"></span>`;
+    let h = `${dot('#10b981')}<strong>${P.stay.length}</strong> jari tetap · ${dot('#8b5cf6')}<strong>${P.move.length}</strong> berpindah · ${dot('#ef4444')}${P.out.length} diangkat · ${dot('#38bdf8')}${P.inn.length} diletakkan`;
+    P.move.forEach(m => { h += `<br>${dot('#8b5cf6')}Jari ${m.a.n}: ${str(m.a)} → ${str(m.b)}`; });
+    P.out.forEach(d => { h += `<br>${dot('#ef4444')}Angkat jari ${d.n} (${str(d)})`; });
+    P.inn.forEach(d => { h += `<br>${dot('#38bdf8')}Letakkan jari ${d.n} (${str(d)})`; });
     if (P.stay.length) h += '<br><em>Biarkan jari hijau tetap di tempatnya saat pindah; itu yang membuat perpindahan terasa cepat.</em>';
     return h;
 }

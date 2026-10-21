@@ -151,7 +151,7 @@
                 <button class="btn-variant" onclick="mvNextPair()" title="Ambil dua akor berurutan dari Progresi">⏭ Dari Progresi</button>
                 <label><input type="checkbox" id="mvSnd"> Bunyikan</label></div>
             <div id="mvStage"></div>
-            <div class="mv-legend"><span><i style="background:#10b981"></i>tetap</span><span><i style="background:#8b5cf6"></i>berpindah</span><span><i style="background:#ef4444"></i>diangkat</span><span><i style="background:#38bdf8"></i>diletakkan</span></div>
+            <div class="mv-legend"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:#10b981"></i>tetap</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:#8b5cf6"></i>berpindah</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:#ef4444"></i>diangkat</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:#38bdf8"></i>diletakkan</span></div>
             <div id="mvInfo" class="chord-detail-row"></div>
         </section>
         <!-- 4. Tersimpan -->
@@ -182,6 +182,21 @@
             <div class="cents-scale"><span>−50</span><span>0</span><span>+50</span></div>
             <button id="tunBtn" class="btn-primary" onclick="toggleListening()">Mulai Mendengarkan</button>
         </section>
+        <section class="card" id="voiceCard" data-tab="tuning">
+            <div class="card-head"><h2>Cari Kunci Suaramu</h2><p>Nyanyikan nada terendah dan tertinggi yang nyaman. App menyarankan kunci dan capo yang cocok untuk suaramu.</p></div>
+            <div class="vc-now"><div id="vcNote" class="note-display">—</div><div id="vcMsg" class="hz-display"></div></div>
+            <div class="goal-bar" aria-hidden="true" style="max-width:280px;margin:10px auto 0"><i id="vcLvl" style="width:0%"></i></div>
+            <div class="vc-range"><div class="vc-box"><span>Terendah</span><strong id="vcLo">—</strong></div><div class="vc-box"><span>Tertinggi</span><strong id="vcHi">—</strong></div><div class="vc-box"><span>Rentang</span><strong id="vcSpan">—</strong></div></div>
+            <div class="picker-row vc-adj"><span>Koreksi terendah (bila terbaca salah)</span><button class="btn-variant" onclick="vcAdj('lo',-12)">−12</button><button class="btn-variant" onclick="vcAdj('lo',-1)">−1</button><button class="btn-variant" onclick="vcAdj('lo',1)">+1</button><button class="btn-variant" onclick="vcAdj('lo',12)">+12</button></div>
+            <div class="picker-row vc-adj"><span>Koreksi tertinggi (bila terbaca salah)</span><button class="btn-variant" onclick="vcAdj('hi',-12)">−12</button><button class="btn-variant" onclick="vcAdj('hi',-1)">−1</button><button class="btn-variant" onclick="vcAdj('hi',1)">+1</button><button class="btn-variant" onclick="vcAdj('hi',12)">+12</button></div>
+            <button id="vcBtn" class="btn-primary" onclick="vcStart()">🎤 Mulai Ukur Suara</button>
+            <div class="picker-row" style="margin-top:10px"><button class="btn-variant" onclick="vcReset()">🗑 Ulangi pengukuran</button></div>
+            <div class="field-label" style="margin:14px 0 6px">Lagu yang dicari</div>
+            <div class="picker-row"><label>Lebar melodi <select id="vcSong" onchange="vcOpt()" aria-label="Lebar melodi lagu"><option value="9">Sempit (±9 nada)</option><option value="12">Sedang (±12 nada)</option><option value="15">Lebar (±15 nada)</option></select></label>
+                <label>Mode <select id="vcMode" onchange="vcOpt()" aria-label="Mode kunci"><option value="maj">Mayor</option><option value="min">Minor</option></select></label>
+                <label>Kunci asli lagu <select id="vcKey" onchange="vcOpt()" aria-label="Kunci asli lagu"></select></label></div>
+            <div id="vcResult"></div>
+        </section>
         <section class="card" data-tab="latih">
             <div class="card-head"><h2>Latihan &amp; Kuis</h2><p>Genjreng akor yang diminta; Mode Strum mengecek jawabanmu. Pilih tingkat dan durasi sesi (30/60/120 detik).</p></div>
             <div id="streakBox" class="streak-box"></div>
@@ -195,6 +210,14 @@
             <div id="drillHist" class="chord-detail-row" style="margin-top:12px;font-size:.8rem"></div>
             <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="scOpen('score')" title="Gambar skor sesi terakhir">🖼 Bagikan skor terakhir</button><button class="btn-variant" onclick="clearHist()">🗑 Hapus riwayat</button></div>
         </section>
+        <section class="card" id="earCard" data-tab="latih">
+            <div class="card-head"><h2>Latih Telinga</h2><p>App memainkan bunyi, kamu menebaknya: jenis akor, interval, urutan akor, arah melodi, atau nada. Tanpa mikrofon, jadi bisa dilatih di mana saja.</p></div>
+            <div class="picker-row"><label>Latihan <select id="earKind" onchange="earKindChange()" aria-label="Jenis Latih Telinga"></select></label>
+                <label>Tingkat <select id="earLevel" onchange="earOpt()" aria-label="Tingkat Latih Telinga"></select></label>
+                <label id="earArpLbl"><input type="checkbox" id="earArp" onchange="earOpt()"> Petik satu-satu</label></div>
+            <div id="earStage" class="ear-stage"></div>
+            <div id="earStats" class="chord-detail-row" style="margin-top:12px;font-size:.8rem"></div>
+        </section>
         <section class="card" data-tab="lagu">
             <div class="card-head"><h2>Lagu</h2><p>Susun bagian lagu (bait, reff), akor berdurasi tiap bagian, dan lirik dengan akor di atasnya. Tersimpan otomatis di browser ini.</p></div>
             <div class="field-label" style="margin:0 0 6px">Judul &amp; tempo</div>
@@ -206,7 +229,7 @@
             <div class="field-label" style="margin:14px 0 6px">Putar</div>
             <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="songPlay()">▶ Putar</button><button class="btn-variant" onclick="stopProgression()">■ Stop</button><button class="btn-variant" onclick="perfOpen()" title="Layar penuh: lirik besar untuk dipakai saat bermain">🎤 Mode Main</button></div>
             <div class="field-label" style="margin:14px 0 6px">Susun lagu</div>
-            <div class="picker-row"><button class="btn-variant" onclick="songAddSection()">➕ Bagian</button><button class="btn-variant" data-tg="imp" aria-pressed="false" onclick="songImportTextToggle()">📋 Tempel teks</button><button class="btn-variant" onclick="songTranspose(-1)" title="Turunkan semua akor 1 nada">♭ Turun 1</button><button class="btn-variant" onclick="songTranspose(1)" title="Naikkan semua akor 1 nada">♯ Naik 1</button></div>
+            <div class="picker-row"><button class="btn-variant" onclick="songAddSection()">➕ Bagian</button><button class="btn-variant" data-tg="imp" aria-pressed="false" onclick="songImportTextToggle()">📋 Tempel teks</button><button class="btn-variant" onclick="songTranspose(-1)" title="Turunkan semua akor 1 nada">♭ Turun 1</button><button class="btn-variant" onclick="songTranspose(1)" title="Naikkan semua akor 1 nada">♯ Naik 1</button><button class="btn-variant" onclick="vcGo()" title="Ukur nada terendah dan tertinggimu, lalu dapatkan saran kunci">🎤 Kunci suaramu</button></div>
             <div id="impBox" class="imp-box" hidden>
                 <div class="chord-detail-row" style="font-size:.78rem">Tempel lirik dengan akor di baris atasnya (seperti dari situs akor). Judul seperti [Verse] / Reff otomatis jadi bagian baru.</div>
                 <textarea id="impTa" class="song-ta" rows="8" aria-label="Tempel lirik dan akor" placeholder="[Verse 1]
@@ -341,6 +364,8 @@ Hari ini kita mulai"></textarea>
     <script src="js/chord-pick.js"></script>
     <script src="js/fx.js"></script>
     <script src="js/finger-move.js"></script>
+    <script src="js/voice-range.js"></script>
+    <script src="js/ear-training.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/supabase-config.js"></script>
