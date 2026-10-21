@@ -10,10 +10,10 @@ function libCatOf(c) {
     return LIB_DASAR.includes(q) ? 'dasar' : LIB_SUS.includes(q) ? 'sus' : 'seventh';
 }
 
-function pcToast(msg) {
+function pcToast(msg, ms) {
     const el = document.getElementById('toast'); if (!el) return;
     el.textContent = msg; el.classList.add('on');
-    clearTimeout(pcToast.t); pcToast.t = setTimeout(() => el.classList.remove('on'), 1700);
+    clearTimeout(pcToast.t); pcToast.t = setTimeout(() => el.classList.remove('on'), ms || 1700);
 }
 
 function renderLib() {
@@ -23,14 +23,15 @@ function renderLib() {
     document.getElementById('libCats').innerHTML = LIB_CATS.map(([k, l]) =>
         `<button class="chip${k === libCat ? ' on' : ''}" onclick="libSetCat('${k}')">${l}</button>`).join('');
     const q = libQ.trim().toLowerCase();
-    libList = Object.values(chordDatabase).filter(c => (q ? (c.key + ' ' + c.name).toLowerCase().includes(q) : c.root === libRoot) && (libCat === 'all' || libCatOf(c) === libCat)).slice(0, 90);
-    document.getElementById('libCount').textContent = libList.length + ' akor' + (q ? ` untuk “${libQ.trim()}”` : ' untuk nada dasar ' + libRoot + (FLAT[libRoot] ? '/' + FLAT[libRoot] : ''));
+    const libAll = Object.values(chordDatabase).filter(c => (q ? (c.key + ' ' + c.name).toLowerCase().includes(q) : c.root === libRoot) && (libCat === 'all' || libCatOf(c) === libCat));
+    libList = libAll.slice(0, 90);
+    document.getElementById('libCount').textContent = (libAll.length > libList.length ? 'Menampilkan ' + libList.length + ' dari ' + libAll.length + ' akor (persempit pencarian)' : libList.length + ' akor') + (q ? ` untuk “${libQ.trim()}”` : ' untuk nada dasar ' + libRoot + (FLAT[libRoot] ? '/' + FLAT[libRoot] : ''));
     grid.innerHTML = libList.length ? libList.map((c, i) => {
         const n = c.variants.length, vi = Math.min(libVar[c.key] || 0, n - 1), v = c.variants[vi];
         return `<div class="lib-card">
             <div class="lib-top"><strong>${esc(c.key)}</strong><small>${c.slash ? 'Slash chord' : esc(c.name.split(' ').slice(1).join(' '))}</small></div>
             <div class="lib-notes">${c.notes.join(' · ')}</div>
-            <div class="lib-dia" onclick="libOpen(${i})" title="Pilih akor ini">${generateVerticalDiagramHTML(v.fingering)}</div>
+            <div class="lib-dia" role="button" tabindex="0" aria-label="Pilih akor ${esc(c.key)}" onclick="libOpen(${i})" title="Pilih akor ini">${generateVerticalDiagramHTML(v.fingering)}</div>
             <div class="lib-var">${n > 1 ? `<button aria-label="Bentuk sebelumnya" onclick="libStep(${i},-1)">‹</button>` : ''}<span title="${esc(v.desc)}">${n > 1 ? (vi + 1) + '/' + n + ' · ' : ''}${esc(v.desc.replace(/ — .*/, ''))}</span>${n > 1 ? `<button aria-label="Bentuk berikutnya" onclick="libStep(${i},1)">›</button>` : ''}</div>
             <div class="lib-act"><button onclick="libPlay(${i})" aria-label="Dengar">🔊</button><button onclick="libAdd(${i})" aria-label="Tambah ke progresi">➕ Progresi</button></div>
         </div>`;
@@ -43,7 +44,7 @@ function libSetCat(k) { libCat = k; renderLib(); }
 function libSearch(v) { libQ = v; renderLib(); }
 function libStep(i, d) { const c = libList[i], n = c.variants.length; libVar[c.key] = ((libVar[c.key] || 0) + d + n) % n; renderLib(); }
 function libPlay(i) { const c = libList[i]; playChordFingering(c.variants[libVar[c.key] || 0].fingering); }
-function libAdd(i) { const c = libList[i]; progression.push({ key: c.key, v: libVar[c.key] || 0 }); renderProgression(); pcToast(c.key + ' ditambahkan ke Progresi'); }
+function libAdd(i) { const c = libList[i]; if (!progPush({ key: c.key, v: libVar[c.key] || 0 })) return; renderProgression(); pcToast(c.key + ' ditambahkan ke Progresi'); }
 function libOpen(i) {
     const c = libList[i], vi = libVar[c.key] || 0;
     learnable = false; currentCandidates = []; showChordKey(c.key);

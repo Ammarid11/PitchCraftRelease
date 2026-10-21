@@ -10,7 +10,7 @@ const MODE_LABEL = { drill: 'Pindah akor', quiz: 'Kuis kunci', level: 'Kuis ting
 
 function loadHist() { try { const h = JSON.parse(localStorage.getItem('pc_hist') || '[]'); return Array.isArray(h) ? h : []; } catch (e) { return []; } }
 function saveHist(h) { try { localStorage.setItem('pc_hist', JSON.stringify(h.slice(-30))); } catch (e) { } }
-function clearHist() { if (confirm('Hapus semua riwayat latihan?')) { saveHist([]); try { localStorage.removeItem('pc_miss'); } catch (e) { } renderHist(); } }
+function clearHist() { if (confirm('Hapus semua riwayat latihan dan catatan akor yang sering salah di perangkat ini? (Streak dan lencana tidak ikut terhapus; salinan catatan di akun tetap ada.)')) { saveHist([]); try { localStorage.removeItem('pc_miss'); } catch (e) { } renderHist(); } }
 
 function renderHist() {
     const el = document.getElementById('drillHist'); if (!el) return;
@@ -34,14 +34,16 @@ function drillHelp() {
     document.getElementById('drillLevel').disabled = m !== 'level';   // tingkat hanya dipakai mode "menurut tingkat"
 }
 function logMiss(want, got) { const a = getMisses(); a.push({ id: newId(), t: Date.now(), want, got }); setMisses(a.slice(-300)); if (window.pcSyncSoon) window.pcSyncSoon(); }
+// hanya akor yang bisa dikenali Mode Strum: kamus lanjutan (ext) dan slash chord tidak ikut deteksi, jadi tak akan pernah terbaca
+const detectable = k => !!(chordDatabase[k] && !chordDatabase[k].ext);
 function weakPool() {
-    const c = {}; getMisses().forEach(e => { if (e && chordDatabase[e.want]) c[e.want] = (c[e.want] || 0) + 1; });
+    const c = {}; getMisses().forEach(e => { if (e && detectable(e.want)) c[e.want] = (c[e.want] || 0) + 1; });
     return Object.keys(c).sort((a, b) => c[b] - c[a]).slice(0, 6);
 }
 
 function pcLock(key) {
     const sk = tKey(key, -getCapo());   // akor terdengar -> bentuk jari
-    if (document.getElementById('autoRec').checked && (!progression.length || progression[progression.length - 1].key !== sk)) { progression.push({ key: sk, v: 0 }); renderProgression(); }
+    if (document.getElementById('autoRec').checked && (!progression.length || progression[progression.length - 1].key !== sk) && progPush({ key: sk, v: 0 }, true)) renderProgression();
     if (!dr) return;
     if (key === dr.target) { dr.ok++; drillNext(); } else { dr.bad++; logMiss(dr.target, key); document.getElementById('drillInfo').textContent = `Terbaca ${key}, coba lagi · benar ${dr.ok}, salah ${dr.bad}`; }
 }
@@ -57,9 +59,12 @@ function drillNext() {
 
 async function drillStart() {
     const mode = document.getElementById('drillMode').value, level = document.getElementById('drillLevel').value, dur = +document.getElementById('drillDur').value || 60;
-    const pool = mode === 'weak' ? weakPool() : mode === 'drill' ? progression.map(p => tKey(p.key, getCapo())) : mode === 'level' ? (LEVELS[level] || LEVELS.dasar).slice() : keyChords().map(c => noteStrings[c.r] + c.q);
+    if (typeof ear !== 'undefined' && ear && !ear.done && ear.i >= 0) { pcToast('Selesaikan atau batalkan ronde Latih Telinga dulu: bunyinya akan terdengar oleh mikrofon'); return; }
+    let pool = mode === 'weak' ? weakPool() : mode === 'drill' ? progression.map(p => tKey(p.key, getCapo())) : mode === 'level' ? (LEVELS[level] || LEVELS.dasar).slice() : keyChords().map(c => noteStrings[c.r] + c.q);
+    const dropped = [...new Set(pool.filter(k => !detectable(k)))];
+    if (dropped.length) { pool = pool.filter(detectable); pcToast('Dilewati (tidak bisa dideteksi Mode Strum): ' + dropped.join(', ')); }
     if (mode === 'weak' && pool.length < 2) { alert('Belum cukup catatan kesalahan. Latih dulu lewat mode lain; akor yang sering salah akan muncul di sini.'); return; }
-    if (mode === 'drill' && new Set(pool).size < 2) { alert('Tambahkan minimal 2 akor berbeda ke Progresi dulu.'); return; }
+    if (mode === 'drill' && new Set(pool).size < 2) { alert('Tambahkan minimal 2 akor berbeda yang bisa dideteksi (akor dasar, 7th, sus; bukan kamus lanjutan atau slash) ke Progresi dulu.'); return; }
     if (!isStrum) await toggleStrum();
     if (!isStrum) return;
     clearInterval(drTimer);

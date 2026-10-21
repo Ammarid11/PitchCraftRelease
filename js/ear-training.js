@@ -227,11 +227,14 @@ function earBuild(kind, level, q, root, rnd, refPcFix) {
         return { t, m, seq: [{ m: t, at: 0 }, { m, at: 1.1 }] };
     }
     if (kind === 'namanada') {   // acuan bervariasi: nada acuan dipilih acak (bukan selalu C) dan tidak sama dengan nada target
-        const pi = noteStrings.indexOf(q), m = 48 + Math.max(0, pi) + (rnd() < 0.5 ? 0 : 12), ref = level !== 'ahli';
-        if (!ref) return { m, ref, seq: [{ m, at: 0 }] };
+        const pi = noteStrings.indexOf(q), ref = level !== 'ahli';
+        if (!ref) { const m0 = 48 + Math.max(0, pi) + (rnd() < 0.5 ? 0 : 12); return { m: m0, ref, seq: [{ m: m0, at: 0 }] }; }
         const pool = level === 'sulit' ? noteStrings.map((_, i) => i) : EAR_SC, fixed = refPcFix !== undefined && refPcFix !== null;
         let rp = fixed ? refPcFix : pool[Math.floor(rnd() * pool.length)];
         if (!fixed && rp === pi) rp = pool[(pool.indexOf(rp) + 1) % pool.length];
+        // target SELALU di atas acuan (0-11 semitone; bila nadanya sama dengan acuan, boleh unison atau satu oktaf di atas),
+        // supaya "makin jauh dari acuan, makin tinggi" benar untuk semua soal
+        const d = (((pi - rp) % 12) + 12) % 12, m = 60 + rp + d + (d === 0 && rnd() < 0.5 ? 12 : 0);
         return { m, ref, refPc: rp, seq: [{ m: 60 + rp, at: 0 }, { m, at: 1.1 }] };
     }
     if (kind === 'akorkey') { const ref = level !== 'ahli'; return { ref, gap: 1.6, keys: ref ? ['C', q] : [q] }; }
@@ -280,7 +283,14 @@ function earOpts() {
     const rf = document.getElementById('earRef'), ref = rf && EAR_REFS.includes(rf.value) ? rf.value : (EAR_REFS.includes(d.ref) ? d.ref : 'auto');
     return { kind, lvl: l && lv[l.value] ? l.value : (lv[saved] ? saved : 'mudah'), arp: a ? !!a.checked : !!d.arp, ref };
 }
+function earRestoreControls() {   // batal mengganti pengaturan: kembalikan pilihan ke yang dipakai ronde berjalan
+    const ks = document.getElementById('earKind'), l = document.getElementById('earLevel'), a = document.getElementById('earArp'), rf = document.getElementById('earRef'), d = earData();
+    d.kind = ear.kind; earSaveData(d);
+    if (ks) ks.value = ear.kind; earFillLevels(ear.kind); if (l) l.value = ear.level; if (a) a.checked = !!ear.arp; if (rf) rf.value = ear.pref || 'auto';
+    earRender();
+}
 function earOpt() {
+    if (ear && !ear.done && (ear.i > 0 || ear.answered) && typeof confirm === 'function' && !confirm('Ronde sedang berjalan. Mengganti pengaturan akan membatalkan ronde ini. Lanjutkan?')) { earRestoreControls(); return; }
     const o = earOpts(), d = earData(); d.kind = o.kind; d.arp = o.arp; d.ref = o.ref;
     if (o.kind === 'akor') d.lvl = o.lvl; else { d.kl = d.kl && typeof d.kl === 'object' ? d.kl : {}; d.kl[o.kind] = o.lvl; }
     earSaveData(d); ear = null; earRender();
@@ -298,24 +308,33 @@ function earKindChange() {
 }
 
 /* ---------- suara ---------- */
+// tiap pemutaran memakai bus sendiri; bunyi sebelumnya dipudarkan (80 ms) supaya "Dengar lagi" yang ditekan cepat tidak menumpuk
+let earBus = null;
+function earNewBus(ctx) {
+    if (!ctx || !ctx.createGain || typeof guitarOut !== 'function') return undefined;
+    try {
+        if (earBus) { const g = earBus.gain, t = ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 0.08); }
+        const b = ctx.createGain(); b.connect(guitarOut(ctx)); earBus = b; return b;
+    } catch (e) { return undefined; }
+}
 function earPlay(root, id, arp) {
     const q = EAR_Q[id], c = q && chordDatabase[root + q.sfx]; if (!c) return;
     try {
-        const ctx = audioCtx(), t0 = ctx.currentTime + 0.05;
-        earPlan(c.variants[0].fingering, arp).forEach(p => pluckNote(ctx, mf(STD_MIDI[p.s] + p.fret), t0 + p.at, 1, arp ? 2.4 : 2.1));
+        const ctx = audioCtx(), t0 = ctx.currentTime + 0.05, bus = earNewBus(ctx);
+        earPlan(c.variants[0].fingering, arp).forEach(p => pluckNote(ctx, mf(STD_MIDI[p.s] + p.fret), t0 + p.at, 1, arp ? 2.4 : 2.1, bus));
     } catch (e) { console.error(e); }
 }
 // jenis lanjutan: urutan akor dipetik serempak 1,15 dtk per akor; lainnya nada tunggal berurutan
 function earPlayP(kind, p) {
     if (!p) return;
     try {
-        const ctx = audioCtx(), t0 = ctx.currentTime + 0.05;
+        const ctx = audioCtx(), t0 = ctx.currentTime + 0.05, bus = earNewBus(ctx);
         if (p.keys) {   // urutan akor (progresi, nama akor): dipetik serempak, berjeda p.gap detik
             const gap = p.gap || 1.15;
-            p.keys.forEach((k, i) => { const c = chordDatabase[k]; if (c) earPlan(c.variants[0].fingering, false).forEach(x => pluckNote(ctx, mf(STD_MIDI[x.s] + x.fret), t0 + i * gap + x.at, 1, 2.1)); });
+            p.keys.forEach((k, i) => { const c = chordDatabase[k]; if (c) earPlan(c.variants[0].fingering, false).forEach(x => pluckNote(ctx, mf(STD_MIDI[x.s] + x.fret), t0 + i * gap + x.at, 1, 2.1, bus)); });
             return;
         }
-        (p.seq || []).forEach(n => pluckNote(ctx, mf(n.m), t0 + n.at, 1, kind === 'melodi' ? 1.2 : 1.8));
+        (p.seq || []).forEach(n => pluckNote(ctx, mf(n.m), t0 + n.at, 1, kind === 'melodi' ? 1.2 : 1.8, bus));
     } catch (e) { console.error(e); }
 }
 function earReplay() { if (ear && !ear.done) { if (ear.kind === 'akor') earPlay(ear.root, ear.q, ear.arp); else earPlayP(ear.kind, ear.p); } }
@@ -333,9 +352,10 @@ function earReviewPlay(i, which) { const it = ear && ear.log[i]; if (it) earSoun
 /* ---------- alur ronde ---------- */
 function earStart() {
     if (typeof dr !== 'undefined' && dr) { pcToast('Hentikan latihan mikrofon dulu'); return; }
+    if (typeof isStrum !== 'undefined' && isStrum) { stopStrum(); pcToast('Mode Strum dihentikan: mikrofon akan menangkap bunyi dari speaker'); }
     const o = earOpts();
     const rm = earRefMode(o.kind, o.lvl, o.ref), key = earKeyInfo(), qs = o.kind === 'namanada' ? earNoteSet(o.lvl, rm, key) : earLevels(o.kind)[o.lvl];
-    ear = { kind: o.kind, level: o.lvl, arp: o.arp, rm, key, qs, deck: earDeckOf(qs, EAR_LEN), i: -1, ok: 0, bad: 0, res: [], log: [], active: 0, prev: null, done: false };
+    ear = { kind: o.kind, level: o.lvl, arp: o.arp, pref: o.ref, rm, key, qs, deck: earDeckOf(qs, EAR_LEN), i: -1, ok: 0, bad: 0, res: [], log: [], active: 0, prev: null, done: false };
     earNext();
 }
 function earNext() {
@@ -399,10 +419,10 @@ function earFbText() {
     if (k === 'progresi') return `Tadi <strong>${N}</strong> pada kunci ${esc(ear.root)}: ${p.keys.map(esc).join(' – ')}. ${H}.`;
     if (k === 'melodi') return `Tadi arahnya <strong>${N}</strong> (${p.midis.map(earN).join(' → ')}): ${H}.`;
     if (k === 'namanada' && p.ref) {
-        const d = (noteStrings.indexOf(q) - p.refPc + 12) % 12, rn = noteStrings[p.refPc] + (FLAT[noteStrings[p.refPc]] ? '/' + FLAT[noteStrings[p.refPc]] : '');
+        const d = (noteStrings.indexOf(q) - p.refPc + 12) % 12, dd = p.m - (60 + p.refPc), rn = noteStrings[p.refPc] + (FLAT[noteStrings[p.refPc]] ? '/' + FLAT[noteStrings[p.refPc]] : '');
         let kd = '';
         if (ear.rm === 'kunci') { const i = (ear.key.mode === 'min' ? EAR_SC_MIN : EAR_SC).indexOf(d); kd = i >= 0 ? `derajat ke-${i + 1} kunci ${esc(earKeyName(ear.key))}; ` : 'di luar tangga nada kunci; '; }
-        return `Acuan <strong>${rn}</strong>, nada tadi ${earN(p.m)}: <strong>${N}</strong>, ${d ? d + ' semitone di atas acuan' : 'sama dengan acuan'} (${kd}${H}).`;
+        return `Acuan <strong>${rn}</strong>, nada tadi ${earN(p.m)}: <strong>${N}</strong>, ${dd === 12 ? 'tepat satu oktaf di atas acuan' : dd ? dd + ' semitone di atas acuan' : 'sama dengan acuan'} (${kd}${H}).`;
     }
     if (k === 'namanada') return `Tadi ${earN(p.m)}: <strong>${N}</strong>, ${H}.`;
     if (k === 'akorkey') return `Tadi <strong>${N}</strong> (nada: ${chordDatabase[q].notes.join(' - ')}): ${H}.`;

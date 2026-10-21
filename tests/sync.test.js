@@ -140,8 +140,13 @@ function makeDevice() {
     ok(eb.st_interval.m3.join() === '10,8' && eb.st_interval.M3.join() === '6,5' && eb.conf_interval['m3>M3'] === 2, 'perangkat B: hitungan digabung dengan data dari A');
     const before = S.calls.length; await B.sync(S); await B.sync(S);
     ok(JSON.stringify(JSON.parse(B.store.pc_ear).st_interval) === JSON.stringify(eb.st_interval), 'sinkron berulang tidak menggandakan angka');
+    // perangkat C punya statistik lebih besar; setelah menarik data server, gabungan harus naik ke server (bukan hanya tersimpan lokal)
+    { const X = makeDevice(); X.run("lsSet('pc_ear', { best: { 'melodi.mudah': 5 } })"); await X.sync(S);
+      const before = JSON.stringify(S.settings.data.ear); await X.sync(S);
+      ok(S.settings.data.ear.best['melodi.mudah'] === 5 && S.settings.data.ear.best['interval.mudah'] === 9 && JSON.stringify(S.settings.data.ear) !== before, 'statistik gabungan (lokal + server) terdorong ke server pada sinkron berikutnya');
+      const n = S.calls.length; await X.sync(S); await X.sync(S); ok(!S.calls.slice(n).some(c => c.startsWith('update')), 'setelah terdorong, sinkron berikutnya tidak menulis lagi'); }
     const C2 = makeDevice(); await C2.sync(S);
-    ok(C2.store.pc_ear && JSON.parse(C2.store.pc_ear).best['interval.mudah'] === 8, 'perangkat baru menerima statistik telinga dari akun');
+    ok(C2.store.pc_ear && JSON.parse(C2.store.pc_ear).best['interval.mudah'] === 9 && JSON.parse(C2.store.pc_ear).best['melodi.mudah'] === 5, 'perangkat baru menerima statistik telinga dari akun');
     const ex = D.run("JSON.stringify(settingsData())"); ok(!ex.includes('"ear"'), 'tanpa statistik telinga, pengaturan tidak memuat kunci ear (hash tidak berubah)');
     D.run("lsSet('pc_ear', { st: { maj: [3, 2] } })"); ok(JSON.parse(D.run("JSON.stringify(settingsData())")).ear.st.maj.join() === '3,2', 'cadangan manual (ekspor) memuat statistik telinga');
     D.run("importProgress({ settings: { ear: { st: { maj: [9, 9], min: [2, 1] } } } })");

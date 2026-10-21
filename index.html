@@ -79,7 +79,7 @@
 
             <div class="field-label" style="margin-bottom:.5rem">Kamus akor</div>
             <div class="picker-row">
-                <select id="rootSel" aria-label="Nada dasar"></select>
+                <select id="rootSel" aria-label="Nada dasar" onchange="qualRefresh()"></select>
                 <select id="qualSel" aria-label="Jenis akor"></select>
                 <button class="btn-variant" onclick="pickManual()">Tampilkan</button>
                 </div>
@@ -129,7 +129,8 @@
             <div class="field-label" style="margin:14px 0 6px">Putar</div>
             <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="playProgression()">▶ Putar</button>
                 <button class="btn-variant" onclick="stopProgression()">■ Stop</button>
-                <button class="btn-variant" onclick="progression=[];renderProgression()">Kosongkan</button>
+                <label title="Ulangi terus dari awal sampai ditekan Stop"><input type="checkbox" data-sync="loop"> 🔁 Loop</label>
+                <button class="btn-variant" onclick="progClear()">Kosongkan</button>
             </div>
             <div class="field-label" style="margin:14px 0 6px">Pola strum &amp; birama</div>
             <div class="picker-row"><label>Pola strum <select id="patSel" onchange="strumPatSel=this.value;renderPat()"></select></label>
@@ -229,7 +230,7 @@
                 <label><input type="checkbox" data-sync="metro" checked> Metronom</label>
                 <label><input type="checkbox" data-sync="cnt" checked> Hitung mundur</label></div>
             <div class="field-label" style="margin:14px 0 6px">Putar</div>
-            <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="songPlay()">▶ Putar</button><button class="btn-variant" onclick="stopProgression()">■ Stop</button><button class="btn-variant" onclick="perfOpen()" title="Layar penuh: lirik besar untuk dipakai saat bermain">🎤 Mode Main</button></div>
+            <div class="picker-row"><button class="btn-variant" data-tg="play" onclick="songPlay()">▶ Putar</button><button class="btn-variant" onclick="stopProgression()">■ Stop</button><label title="Ulangi terus dari awal sampai ditekan Stop"><input type="checkbox" data-sync="loop"> 🔁 Loop</label><button class="btn-variant" onclick="perfOpen()" title="Layar penuh: lirik besar untuk dipakai saat bermain">🎤 Mode Main</button></div>
             <div class="field-label" style="margin:14px 0 6px">Susun lagu</div>
             <div class="picker-row"><button class="btn-variant" onclick="songAddSection()">➕ Bagian</button><button class="btn-variant" data-tg="imp" aria-pressed="false" onclick="songImportTextToggle()">📋 Tempel teks</button><button class="btn-variant" onclick="songTranspose(-1)" title="Turunkan semua akor 1 nada">♭ Turun 1</button><button class="btn-variant" onclick="songTranspose(1)" title="Naikkan semua akor 1 nada">♯ Naik 1</button><button class="btn-variant" onclick="vcGo()" title="Ukur nada terendah dan tertinggimu, lalu dapatkan saran kunci">🎤 Kunci suaramu</button></div>
             <div id="impBox" class="imp-box" hidden>
@@ -289,6 +290,7 @@ Hari ini kita mulai"></textarea>
             <button class="btn-variant" onclick="perfBpm(-5)" aria-label="Lebih lambat">−</button><strong id="perfBpm">80</strong><span class="unit">BPM</span><button class="btn-variant" onclick="perfBpm(5)" aria-label="Lebih cepat">+</button>
             <span class="beat-dot" aria-hidden="true"></span>
             <button class="btn-variant" onclick="perfFont(-2)" aria-label="Huruf lebih kecil">A−</button><button class="btn-variant" onclick="perfFont(2)" aria-label="Huruf lebih besar">A+</button>
+            <label><input type="checkbox" data-sync="loop"> 🔁 Loop</label>
             <label><input type="checkbox" id="perfMute"> Tanpa suara akor</label>
             <button class="kp-x" onclick="perfClose()" aria-label="Tutup">×</button>
         </div>

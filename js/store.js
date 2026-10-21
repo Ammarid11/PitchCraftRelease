@@ -1,7 +1,7 @@
 /* Pitchcraft — Penyimpanan lokal bersama: localStorage aman, log sesi latihan ber-ID (dasar streak & sinkron), hash/kanonisasi data. */
 
 const lsGet = (k, def) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? def : v; } catch (e) { return def; } };
-const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { if (typeof pcStoreFail === 'function') pcStoreFail(); } };
 const dayKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 
 const newId = () => (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID()

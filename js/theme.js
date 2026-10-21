@@ -37,7 +37,7 @@ function setStage(on) {
     if (pcStage) keepAwake();
     else {
         const perf = document.getElementById('perf');
-        if (!isListening && !isStrum && !(perf && perf.classList.contains('on'))) _allowSleepBase();
+        if (!isListening && !isStrum && !(typeof vcActive !== 'undefined' && vcActive) && !(perf && perf.classList.contains('on'))) _allowSleepBase();
     }
     pcToast(pcStage ? 'Mode Panggung aktif' : 'Mode Panggung mati');
 }

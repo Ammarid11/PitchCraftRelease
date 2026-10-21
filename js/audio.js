@@ -20,10 +20,10 @@ function guitarOut(ctx) {
 
 // Karplus-Strong: derau pendek diputar di delay-line dengan filter rata-rata -> bunyi senar petik.
 // Panjang delay dibulatkan, jadi nada dikoreksi lewat playbackRate agar tepat.
-const ksCache = {};
+const ksCache = new Map(), KS_MAX = 64;   // LRU: tiap buffer ~0,5 MB; tanpa batas, tiap nada unik (tuning, capo, kalibrasi) menambah memori selamanya
 function ksBuffer(ctx, L) {
     const key = ctx.sampleRate + ':' + L;
-    if (ksCache[key]) return ksCache[key];
+    if (ksCache.has(key)) { const b = ksCache.get(key); ksCache.delete(key); ksCache.set(key, b); return b; }
     const N = Math.floor(ctx.sampleRate * 2.6), buf = ctx.createBuffer(1, N, ctx.sampleRate), d = buf.getChannelData(0), line = new Float32Array(L);
     let prev = 0;
     for (let i = 0; i < L; i++) { prev = 0.55 * (Math.random() * 2 - 1) + 0.45 * prev; line[i] = prev; }   // derau dilembutkan = petikan jari
@@ -35,17 +35,18 @@ function ksBuffer(ctx, L) {
         lp += 0.9 * (v - lp);                                   // redam harmonik tinggi sedikit lebih cepat (senar nyata)
         d[n] = line[p]; line[p] = lp; p = q;
     }
-    return (ksCache[key] = buf);
+    ksCache.set(key, buf); if (ksCache.size > KS_MAX) ksCache.delete(ksCache.keys().next().value);
+    return buf;
 }
 
-function pluckNote(ctx, freq, t0, vol, dur) {
+function pluckNote(ctx, freq, t0, vol, dur, dest) {   // dest (opsional) = simpul tujuan, mis. bus yang bisa dipudarkan
     const L = Math.max(2, Math.round(ctx.sampleRate / freq - 0.5));
     const src = ctx.createBufferSource(), g = ctx.createGain();
     src.buffer = ksBuffer(ctx, L);
     src.playbackRate.value = freq / (ctx.sampleRate / (L + 0.5));
     g.gain.setValueAtTime(0.22 * vol, t0);
     g.gain.linearRampToValueAtTime(0, t0 + dur);
-    src.connect(g); g.connect(guitarOut(ctx));
+    src.connect(g); g.connect(dest || guitarOut(ctx));
     src.start(t0); src.stop(t0 + dur + 0.05);
 }
 

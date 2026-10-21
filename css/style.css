@@ -1554,3 +1554,6 @@ body::before { content: ""; position: fixed; inset: -25%; z-index: -1; pointer-e
 .ear-review { margin-top: 12px; }
 .ear-rv { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--surface-border); font-size: .84rem; line-height: 1.5; }
 .ear-rv .picker-row { margin-top: 6px; }
+
+/* Hemat baterai: animasi latar yang terus berjalan dimatikan di perangkat sentuh (HP/tablet) */
+@media (hover: none) { body::before { animation: none; will-change: auto; } }

@@ -89,7 +89,10 @@ renderHist = function () { _renderHist(); renderStreak(); };
 /* ===== Tempel lirik + akor dari situs lain (format akor di baris atas) ===== */
 const CH_RE = /^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m|M|\d|\(|\)|b|#|\+|-)*(?:\/[A-G][#b]?)?$/;
 const IGN_RE = /^[|\-–—:.]+$|^x\d+$|^\d+x$|^N\.?C\.?$/i;
-const HEAD_RE = /^\s*[\[(]?\s*((?:intro|verse|bait|chorus|refrain|reff?|bridge|outro|interlude|pre-?chorus|coda|instrumental)\b[^\]\n)]{0,18}?)\s*[\])]?:?\s*$/i;
+const HEAD_KW = '(?:intro|verse|bait|chorus|refrain|reff?|bridge|outro|interlude|pre-?chorus|coda|instrumental)';
+const HEAD_BR = new RegExp('^\\s*[\\[(]\\s*(' + HEAD_KW + '\\b[^\\]\\n)]{0,18}?)\\s*[\\])]\\s*:?\\s*$', 'i');            // [Verse 1 - Cowok]
+const HEAD_PL = new RegExp('^\\s*(' + HEAD_KW + '\\b(?:\\s*\\d{1,2})?(?:\\s*x\\s*\\d{1,2})?)\\s*:?\\s*$', 'i');                    // Reff: / Verse 2 / Outro x2 (lirik "Bridge over troubled" bukan judul)
+const HEAD_RE = { exec: ln => HEAD_BR.exec(ln) || HEAD_PL.exec(ln), test: ln => HEAD_BR.test(ln) || HEAD_PL.test(ln) };
 const unParen = t => t.replace(/^\(|\)$/g, '');
 
 function isChordLine(ln) {
@@ -103,7 +106,7 @@ function isChordLine(ln) {
 function chordKeyOf(tok) {
     const m = /^([A-G][#b]?)(.*?)(?:\/([A-G][#b]?))?$/.exec(unParen(tok)); if (!m) return null;
     const root = FLAT_TO_SHARP[m[1]] || m[1], bass = m[3] ? (FLAT_TO_SHARP[m[3]] || m[3]) : '';
-    let q = m[2].replace(/^min/, 'm').replace(/^M(?!aj)/, 'maj').replace(/^maj$/, '').replace(/^maj(?=\d)/, 'maj');
+    let q = m[2].replace(/^min/, 'm').replace(/^M(?!aj)/, 'maj').replace(/^maj$/, '').replace(/^maj(?=\d)/, 'maj').replace(/^-/, 'm').replace(/^sus$/, 'sus4').replace(/^\+$/, 'aug');
     const tries = [root + q + (bass ? '/' + bass : ''), root + q, root + q.replace(/\(.*\)/, ''), root + (/^m(?!aj)/.test(q) ? 'm' : '')];
     return tries.find(k => chordDatabase[k]) || null;
 }
@@ -145,10 +148,12 @@ function songImportTextRun() {
     const secs = parseChordSheet(document.getElementById('impTa').value);
     if (!secs.length) { alert('Tidak ada lirik atau akor yang bisa dibaca. Tempel lirik dengan akor di baris atasnya.'); return; }
     const empty = song.sections.length === 1 && !song.sections[0].lyrics && !song.sections[0].chords.length;
+    const want = (empty ? 0 : song.sections.length) + secs.length;
     song = cleanSong({ name: song.name, meter: song.meter, sections: (empty ? [] : song.sections).concat(secs) });
+    if (want > song.sections.length) alert('Batas ' + SONG_MAX_SEC + ' bagian: ' + (want - song.sections.length) + ' bagian terakhir dari teks tidak ikut ditambahkan.');
     if (!song.sections.length) song.sections = [newSection()];
     document.getElementById('impTa').value = ''; songImportTextToggle(false);
-    renderSong(); pcToast(secs.length + ' bagian ditambahkan dari teks');
+    renderSong(); pcToast(Math.min(secs.length, SONG_MAX_SEC) + ' bagian ditambahkan dari teks');
 }
 
 /* ===== Mode Main: layar penuh, lirik besar, akor aktif tersorot, auto-scroll ===== */
@@ -181,7 +186,7 @@ function perfOpen() {
 function perfClose() {
     stopProgression();
     const p = document.getElementById('perf'); p.classList.remove('on'); p.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = ''; if (!isListening && !isStrum) allowSleep();
+    document.body.style.overflow = ''; if (!isListening && !isStrum && !(typeof vcActive !== 'undefined' && vcActive)) allowSleep();
 }
 function perfPlay() {
     const list = [].concat(...song.sections.map(s => s.chords));
@@ -204,4 +209,7 @@ let installEv = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEv = e; const b = document.getElementById('installBtn'); if (b) b.hidden = false; });
 window.addEventListener('appinstalled', () => { installEv = null; const b = document.getElementById('installBtn'); if (b) b.hidden = true; });
 function pcInstall() { if (!installEv) return; installEv.prompt(); installEv.userChoice.finally(() => { installEv = null; document.getElementById('installBtn').hidden = true; }); }
-if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+    navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'pc-updated') pcToast('Versi baru terpasang. Muat ulang halaman agar memakainya.', 6000); });
+}

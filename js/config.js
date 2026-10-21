@@ -21,21 +21,39 @@ function micError(err) {
 // Jaga layar tetap menyala saat mikrofon aktif (Android mematikan layar & menghentikan mic)
 let wakeLock = null, tunerStream = null;
 
+let wakeWant = false, wakeBusy = false;
 async function keepAwake() {
-    try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) { }
+    wakeWant = true;
+    if (wakeLock || wakeBusy) return;   // satu kunci saja: meminta lagi tanpa melepas yang lama membuat kunci yatim (layar tak mau padam)
+    wakeBusy = true;
+    try {
+        if ('wakeLock' in navigator) {
+            const l = await navigator.wakeLock.request('screen');
+            if (!wakeWant) { try { l.release(); } catch (e) { } }   // allowSleep() dipanggil selagi menunggu
+            else { wakeLock = l; l.addEventListener('release', () => { if (wakeLock === l) wakeLock = null; }); }
+        }
+    } catch (e) { }
+    wakeBusy = false;
 }
 
-function allowSleep() { try { if (wakeLock) wakeLock.release(); } catch (e) { } wakeLock = null; }
+function allowSleep() { wakeWant = false; try { if (wakeLock) wakeLock.release(); } catch (e) { } wakeLock = null; }
 
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && (isListening || isStrum) && !wakeLock) keepAwake();
+    if (document.visibilityState === 'visible' && (isListening || isStrum || (typeof vcActive !== 'undefined' && vcActive)) && !wakeLock) keepAwake();
 });
 
 // Utilitas bersama: capo aktif & transpose nama akor (dipakai progresi, lagu, audio, latihan)
 function getCapo() { const e = document.getElementById('capoSel'); return e ? (+e.value || 0) : 0; }
-const FLAT_TO_SHARP = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#' };
+const FLAT_TO_SHARP = { Db: 'C#', Eb: 'D#', Gb: 'F#', Ab: 'G#', Bb: 'A#', Cb: 'B', Fb: 'E', 'E#': 'F', 'B#': 'C' };
 function tNote(n, d) { n = FLAT_TO_SHARP[n] || n; const i = noteStrings.indexOf(n); return i < 0 ? n : noteStrings[(i + d + 12) % 12]; }
 function tKey(k, d) { return String(k).replace(/[A-G][#b]?/g, n => tNote(n, d)); }
+
+// Penyimpanan perangkat penuh/diblokir: beri tahu pengguna (sekali per 30 dtk) supaya data tidak hilang diam-diam
+let _storeFailT = 0;
+function pcStoreFail() {
+    const n = Date.now(); if (n - _storeFailT < 30000) return; _storeFailT = n;
+    if (typeof pcToast === 'function') pcToast('Penyimpanan perangkat penuh atau diblokir: perubahan terakhir tidak tersimpan. Ekspor cadangan di 👤 Akun.', 5000);
+}
 
 // Kalibrasi nada acuan A (Hz); dipakai tuner, deteksi nada, dan suara
 let refA = 440;

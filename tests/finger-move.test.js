@@ -33,4 +33,16 @@ ok(/--ax:[\d.]+px/.test(svg) && /--by:[\d.]+px/.test(svg), 'posisi awal/akhir te
 ok(run("mvInfoHTML(mvDots('C',0), mvDots('C',0), mvPlan(mvDots('C',0), mvDots('C',0)))").includes('sama'), 'akor sama diberi pesan khusus');
 // mode kidal tidak merusak
 ok(run("(()=>{ document.body.classList.contains = () => true; const A=mvDots('F',0), B=mvDots('Bm',0); return mvSvg(A,B,mvPlan(A,B)).length > 200; })()"), 'barre + mode kidal menghasilkan SVG');
+// penomoran jari: barre hanya jari 1 di senar yang tepat di fret barre (bug lama: semua senar di antaranya berlabel 1)
+ok(JSON.stringify(run('analyzeFingers([-1, 2, 4, 4, 3, 2]).fing')) === '[0,1,3,4,2,1]', 'Bm barre: jari 1 hanya di fret 2 (senar 4 dan 1), sisanya 2-4 menurut fret');
+{ let badF = 0, n = 0, cnt = 0;
+  run('Object.keys(chordDatabase)').forEach(k => run(`chordDatabase['${k}'].variants`).forEach(v => {
+      const f = v.fingering, a = run(`analyzeFingers(${JSON.stringify(f)})`); n++;
+      const byFinger = {};
+      f.forEach((fr, s) => { if (fr > 0) { const g = a.fing[s]; (byFinger[g] = byFinger[g] || new Set()).add(fr); if (!(g >= 1 && g <= 4)) badF++; } });
+      Object.keys(byFinger).forEach(g => { if (byFinger[g].size > 1) badF++; });   // satu jari tidak mungkin menekan dua fret berbeda
+      if (a.barre) cnt++;
+  }));
+  ok(badF === 0, `penomoran jari konsisten untuk ${n} bentuk akor (${cnt} berbarre): satu jari = satu fret, nomor 1-4`);
+}
 console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes animasi jari lulus'); process.exit(fails ? 1 : 0);

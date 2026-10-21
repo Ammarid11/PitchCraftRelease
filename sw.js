@@ -1,6 +1,6 @@
 /* Pitchcraft — service worker: simpan semua file agar app jalan offline.
  * Naikkan nomor VERSI (dan APP_VER di js/tabs.js) setiap kali ada file yang berubah supaya cache lama dibuang. */
-const VERSI = 'pitchcraft-v30';
+const VERSI = 'pitchcraft-v32';
 const FILES = ['./', 'index.html', 'privacy.html', 'manifest.json', 'css/style.css',
     'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
     'js/boot.js', 'js/config.js', 'js/chords-db.js', 'js/pitch.js', 'js/gate.js', 'js/audio.js', 'js/tuner.js',
@@ -12,10 +12,17 @@ const FILES = ['./', 'index.html', 'privacy.html', 'manifest.json', 'css/style.c
 const LIBC = 'pitchcraft-lib', LIB_RE = /^https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@\d+\.\d+\.\d+\//;
 self.addEventListener('install', e => {
     // satu per satu: file yang hilang (mis. ikon belum diunggah) tidak boleh menggagalkan seluruh pembaruan
-    e.waitUntil(caches.open(VERSI).then(c => Promise.all(FILES.map(f => c.add(f).catch(() => console.warn('sw: gagal menyimpan', f))))).then(() => self.skipWaiting()));
+    // cache:'reload' = selalu ambil dari jaringan, bukan cache HTTP browser (kalau tidak, cache VERSI baru bisa berisi file lama)
+    // ikon boleh gagal; file inti (html/css/js) gagal = pemasangan dibatalkan, SW lama tetap dipakai sampai pembaruan berikutnya berhasil
+    e.waitUntil(caches.open(VERSI).then(c => Promise.all(FILES.map(f => c.add(new Request(f, { cache: 'reload' })).then(() => null, () => /^icons\//.test(f) ? null : f))))
+        .then(bad => { bad = bad.filter(Boolean); if (bad.length) throw new Error('sw: gagal menyimpan ' + bad.join(', ')); }).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
-    e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSI && k !== LIBC).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+    e.waitUntil(caches.keys().then(ks => {
+        const upd = ks.some(k => k !== VERSI && k !== LIBC && /^pitchcraft-v/.test(k));   // ada cache versi lama = ini pembaruan, bukan pemasangan pertama
+        return Promise.all(ks.filter(k => k !== VERSI && k !== LIBC).map(k => caches.delete(k))).then(() => self.clients.claim())
+            .then(() => upd ? self.clients.matchAll({ type: 'window' }).then(cs => cs.forEach(c => c.postMessage({ type: 'pc-updated' }))) : null);
+    }));
 });
 // cache dulu (cepat & offline), lalu perbarui diam-diam di belakang layar
 self.addEventListener('fetch', e => {

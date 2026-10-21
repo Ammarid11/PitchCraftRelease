@@ -27,7 +27,7 @@ function fxSync() {
     set('play', typeof progTimers !== 'undefined' && progTimers.length > 0, false);
 }
 document.addEventListener('click', () => setTimeout(fxSync, 0));
-setInterval(fxSync, 400);   // menangkap perubahan dari luar klik: pengaturan dimuat, sinkron akun, putaran selesai sendiri
+setInterval(() => { if (!document.hidden) fxSync(); }, 500);   // menangkap perubahan dari luar klik: pengaturan dimuat, sinkron akun, putaran selesai sendiri
 fxSync();
 
 // kartu di tab yang baru dibuka muncul berurutan
@@ -35,3 +35,34 @@ function fxStagger() { document.querySelectorAll('.card.on').forEach((c, i) => c
 const _showTabFx = showTab;
 showTab = function (n) { _showTabFx(n); fxStagger(); };
 fxStagger();
+
+/* ===== Aksesibilitas: elemen role="button" bisa ditekan dengan Enter/Spasi; dialog menjebak fokus dan mengunci gulir latar ===== */
+document.addEventListener('keydown', e => {
+    const t = e.target;
+    if ((e.key === 'Enter' || e.key === ' ') && t && t.getAttribute && t.getAttribute('role') === 'button' && !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) { e.preventDefault(); t.click(); }
+    if (e.key === 'Tab') {
+        const m = document.querySelector('.modal.on .modal-box'); if (!m) return;
+        const f = Array.from(m.querySelectorAll('button,input,select,textarea,a[href],summary,[tabindex="0"]')).filter(x => !x.disabled && x.offsetParent !== null);
+        if (!f.length) return;
+        const a = document.activeElement, i = f.indexOf(a);
+        if (!m.contains(a)) { e.preventDefault(); f[0].focus(); }
+        else if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+    }
+});
+(function () {
+    let lastFocus = null;
+    const sync = () => {
+        const open = document.querySelector('.modal.on'), perf = document.getElementById('perf');
+        document.body.style.overflow = (open || (perf && perf.classList.contains('on'))) ? 'hidden' : '';
+    };
+    document.querySelectorAll('.modal').forEach(m => {
+        let was = m.classList.contains('on');
+        new MutationObserver(() => {
+            const now = m.classList.contains('on'); if (now === was) return; was = now;
+            if (now) { lastFocus = document.activeElement; m.setAttribute('aria-hidden', 'false'); const b = m.querySelector('.kp-x, .modal-box button, .modal-box input'); if (b) setTimeout(() => b.focus(), 30); }
+            else { m.setAttribute('aria-hidden', 'true'); if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus(); }
+            sync();
+        }).observe(m, { attributes: true, attributeFilter: ['class'] });
+    });
+})();

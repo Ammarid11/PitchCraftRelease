@@ -50,7 +50,7 @@ Dimuat berurutan; **urutan di bagian bawah `index.html` penting**.
 ## Merilis perubahan
 
 1. Jalankan `node --check` pada file JS yang berubah dan semua tes di bawah.
-2. Naikkan `VERSI` di `sw.js` **dan** `APP_VER` di `js/tabs.js` (harus sama, mis. `pitchcraft-v30` dan `v30`) agar cache lama dibuang.
+2. Naikkan `VERSI` di `sw.js` **dan** `APP_VER` di `js/tabs.js` (harus sama, mis. `pitchcraft-v32` dan `v32`) agar cache lama dibuang.
 3. Bila menambah file baru di `js/`, daftarkan juga di `FILES` pada `sw.js` dan di bagian bawah `index.html`.
 4. Folder `icons/` harus ikut diunggah.
 
@@ -66,6 +66,8 @@ Semua dijalankan dari folder utama dengan Node 18+. Tes memuat kode asli di `js/
 | `node tests/voice-range.test.js` | Penangkap nada tahan (rentang rendah/tinggi) dan logika saran kunci + capo. |
 | `node tests/share.test.js` | Kartu bagikan dengan canvas palsu (memastikan tidak error dan teks terbentuk, bukan menilai tampilan). |
 | `node tests/sync.test.js` | Logika gabung sinkron dengan server palsu (sesi, lencana, lagu, konflik). Tidak menguji Supabase asli. |
+| `node tests/song.test.js` | Lagu dan tempel teks: transpose (hanya penanda akor), pembaca teks akor (judul bagian, C-, Csus, Cb/E#), batas bagian/akor, konfirmasi impor, batas progresi. |
+| `node tests/sw.test.js` | Service worker dengan lingkungan palsu: cache:"reload", file inti gagal = pemasangan batal, ikon boleh gagal, pemberitahuan versi baru. |
 | `node tests/rls.test.js` | RLS pada Supabase **asli**; butuh dua akun uji, lihat komentar di awal file. |
 
 ## Data di perangkat

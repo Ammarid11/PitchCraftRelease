@@ -15,7 +15,7 @@ function syncVals(k, v) {
 function collectSettings() {
     return {
         v: SETTINGS_V, progression, song,
-        bpm: +byId('bpm').value || 80, metro: byId('metroChk').checked, count: document.querySelector('[data-sync="cnt"]').checked,
+        bpm: +byId('bpm').value || 80, loop: !!(document.querySelector('[data-sync="loop"]') || {}).checked, metro: byId('metroChk').checked, count: document.querySelector('[data-sync="cnt"]').checked,
         pat: strumPatSel, tuning: byId('tunSel').value, keyRoot: byId('keyRoot').value, keyMode: byId('keyMode').value, capo: byId('capoSel').value,
         lefty: document.body.classList.contains('lefty'), autoRec: byId('autoRec').checked,
         refA, vib: byId('vibChk').checked, diag: diagramMode, dmode: byId('drillMode').value, lvl: byId('drillLevel').value, dur: byId('drillDur').value
@@ -24,7 +24,7 @@ function collectSettings() {
 
 function saveSettings() {
     if (pcLoading) return;
-    try { localStorage.setItem(PC_KEY, JSON.stringify(collectSettings())); } catch (e) { }
+    try { localStorage.setItem(PC_KEY, JSON.stringify(collectSettings())); } catch (e) { pcStoreFail(); }
 }
 
 function setSel(id, v) { const e = byId(id); if (e && v !== undefined && Array.from(e.options).some(o => o.value === String(v))) e.value = v; }
@@ -36,9 +36,10 @@ function loadSettings() {
     s = migrateSettings(s);
     pcLoading = true;
     try {
-        if (Array.isArray(s.progression)) progression = s.progression.filter(p => p && chordDatabase[p.key]).map(p => ({ key: p.key, v: Math.min(Math.max(0, p.v | 0), chordDatabase[p.key].variants.length - 1) }));
+        if (Array.isArray(s.progression)) progression = s.progression.slice(0, PROG_MAX).filter(p => p && chordDatabase[p.key]).map(p => ({ key: p.key, v: Math.min(Math.max(0, p.v | 0), chordDatabase[p.key].variants.length - 1) }));
         if (s.song && Array.isArray(s.song.sections)) { song = cleanSong(s.song); if (!song.sections.length) song.sections = [newSection()]; }
         if (+s.bpm) syncVals('bpm', Math.min(200, Math.max(40, +s.bpm)));
+        if (typeof s.loop === 'boolean') syncVals('loop', s.loop);
         if (typeof s.metro === 'boolean') syncVals('metro', s.metro);
         if (typeof s.count === 'boolean') syncVals('cnt', s.count);
         if (STRUM_PATS[s.pat]) { strumPatSel = s.pat; byId('patSel').value = s.pat; }

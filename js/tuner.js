@@ -25,6 +25,7 @@ async function toggleListening() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('nomic');
             const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
             tunerStream = stream;
+            if (audioContext.state === 'suspended') await audioContext.resume();   // iOS/Safari memulai dalam keadaan tertahan
 
             microphone = audioContext.createMediaStreamSource(stream);
             biquadFilter = audioContext.createBiquadFilter();
@@ -50,6 +51,8 @@ async function toggleListening() {
 
             updatePitch();
         } catch (err) {
+            if (tunerStream) { tunerStream.getTracks().forEach(t => t.stop()); tunerStream = null; }
+            if (audioContext && audioContext.state !== 'closed') audioContext.close();   // jangan bocorkan konteks bila izin mikrofon ditolak
             micError(err);
             console.error(err);
         }

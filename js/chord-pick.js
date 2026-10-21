@@ -40,10 +40,11 @@ function cpPlay(i) { const c = cpList[i]; if (c) playChordFingering(c.variants[0
 
 function cpAdd(i) {
     const c = cpList[i]; if (!c || !cpTarget) return;
-    if (cpTarget.kind === 'prog') { progression.push({ key: c.key, v: 0 }); renderProgression(); }
+    if (cpTarget.kind === 'prog') { if (!progPush({ key: c.key, v: 0 })) return; renderProgression(); }
     else {
         const s = song.sections[cpTarget.i];
         if (!s) { alert('Bagian lagu tidak ditemukan.'); cpClose(); return; }
+        if (typeof songFull === 'function' && songFull(cpTarget.i)) return;
         s.chords.push({ key: c.key, v: 0, beats: 0 }); renderSong();
     }
     pcToast(c.key + ' ditambahkan'); document.getElementById('cpInfo').innerHTML = 'Ditambahkan ke: <strong>' + esc(cpTargetText()) + '</strong>';

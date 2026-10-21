@@ -1,7 +1,7 @@
 Ini penilaian jujur kondisi Latih Telinga sekarang, lalu rencana peningkatannya. Penting: kata “solid” di bawah artinya logikanya sudah diuji otomatis di Node. Belum ada yang diuji di HP atau browser sungguhan, jadi belum ada yang bisa kusebut “sempurna”.
 
 Yang sudah solid
-Cakupan jenis: 8 jenis latihan dengan 3–4 tingkat. Soal seimbang dan nada dasar tidak berulang.
+Cakupan jenis: 7 jenis latihan dengan 3–4 tingkat. Soal seimbang dan nada dasar tidak berulang.
 Alur ronde: 10 soal, jawaban ganda tidak menambah skor, dan waktu diam dibatasi 60 detik.
 Umpan balik: jawaban benar disertai penjelasan, dan ketuk pilihan lain untuk membandingkan bunyi.
 Panduan: langkah cara latihan di layar awal, petunjuk tugas dan nama acuan di tiap soal.
@@ -9,7 +9,7 @@ Statistik: rekor per jenis dan tingkat, jawaban paling sulit, dan tebakan yang s
 Terhubung ke sistem lain: streak, target harian, lencana, dan sinkron akun lewat sesi ber-ID.
 Tanpa mikrofon: bisa dilatih di mana saja.
 Tes otomatis: ear-training.test.js cukup lengkap.
-Yang bisa ditingkatkan
+Yang bisa ditingkatkan (catatan 21 Okt 2026: #2, #3, #5, #6 sudah selesai, lihat status di bagian bawah)
 Prioritas 1: cepat dan berdampak (ukuran S–M)
 #	Perbaikan	Alasan
 1	Uji manual di HP nyata (Android dan iOS): volume, suara terputus, tombol “Dengar lagi” ditekan cepat	Belum pernah diuji di perangkat. Ini risiko terbesar.
@@ -52,3 +52,6 @@ Status (21 Okt 2026, cache v29) - Rilis 1
 Selesai dan lolos tes otomatis di Node: #2 statistik ikut cadangan dan sinkron, #3 kartu bagikan hasil Latih Telinga, #5 ulasan akhir ronde, #6 aksesibilitas (pengumuman pembaca layar, penanda bukan hanya warna).
 Belum: #1 uji di HP nyata. Itu tidak bisa dikerjakan dari sini. Daftar uji: (a) Android dan iOS, putar tiap jenis, cek volume dan tidak ada suara terputus; (b) tekan "Dengar lagi" cepat berkali-kali, cek bunyi tidak menumpuk aneh; (c) ganti HP atau masuk akun di perangkat kedua, cek rekor dan "paling sulit" ikut muncul; (d) bagikan kartu hasil lewat WhatsApp; (e) uji dengan TalkBack/VoiceOver.
 Rilis 2 (#4, 7, 8, 12, 13) dan Rilis 3 (#9, 10, 11) belum dikerjakan.
+
+Status (21 Okt 2026, cache v31) - perbaikan bug
+Latih Telinga: Nama nada kini selalu membunyikan target di atas acuan (0-11 semitone) sehingga penjelasan "di atas acuan" benar; ganti pengaturan saat ronde berjalan meminta konfirmasi; "Dengar lagi" cepat memudarkan bunyi lama (tidak menumpuk); memulai ronde menghentikan Mode Strum dan latihan mikrofon tidak bisa dimulai selagi ronde berjalan. Rincian lengkap di BUG.md.

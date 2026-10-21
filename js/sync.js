@@ -72,6 +72,7 @@ async function syncDoc(db, uid, kind, st) {
         }
         if (!localChanged || canon(cleanRemote) !== canon(local)) applyRemoteDoc(kind, remote.data);
         rec.base = remote.updated_at; rec.hash = hashStr(canon(docLocal(kind)));
+        if (kind === 'settings' && canon(pcEarClean((remote.data || {}).ear || {})) !== canon(pcEarClean(lsGet('pc_ear', {})))) { rec.hash = 'stale'; st.again = true; }   // gabungan lebih lengkap daripada server: dorong pada sinkron berikutnya
         return;
     }
     throw new Error('server sibuk, coba lagi');
@@ -122,8 +123,9 @@ async function syncOnce(db, uid) {
     // 3) lagu dan pengaturan
     await syncDoc(db, uid, 'song', st); setSync(st);
     await syncDoc(db, uid, 'settings', st);
-    st.at = Date.now(); setSync(st);
+    const again = st.again; delete st.again; st.at = Date.now(); setSync(st);
     renderStreak();
+    if (again && typeof pcSyncSoon === 'function') pcSyncSoon();
 }
 
 function hasLocalChanges() {
@@ -163,7 +165,7 @@ function dbReal(uid) {
         },
         async insertDoc(kind, row) { const d = ck(await sb.from(T[kind]).insert(row).select('updated_at')); return d[0].updated_at; },
         async updateDoc(kind, id, data, base) {
-            let q = sb.from(T[kind]).update({ data });
+            let q = sb.from(T[kind]).update(kind === 'settings' ? { data, schema_version: typeof SETTINGS_V !== 'undefined' ? SETTINGS_V : 1 } : { data });
             q = kind === 'song' ? q.eq('user_id', uid).eq('id', id) : q.eq('user_id', uid);
             const d = ck(await q.eq('updated_at', base).select('updated_at')); return d.length ? d[0].updated_at : null;
         },
@@ -203,9 +205,10 @@ async function sbLoad() {
 }
 
 function wipeLocal() {
-    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog', 'pc_miss', 'pc_voice', 'pc_ear'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
+    ['pc_sessions', 'pc_badges', 'pc_days', 'pc_conflicts', 'pc_sync', 'pc_lastlog', 'pc_miss', 'pc_voice', 'pc_ear', 'pc_hist', 'pc_saved', 'pc_ex', 'pc_settings'].forEach(k => { try { localStorage.removeItem(k); } catch (e) { } });
     song = { name: '', meter: '4/4', sections: [newSection()] }; progression = [];
-    try { renderSong(); renderProgression(); renderStreak(); } catch (e) { }
+    try { if (typeof savedChordsList !== 'undefined') savedChordsList = []; if (typeof exemplars !== 'undefined') exemplars = {}; } catch (e) { }   // salinan di memori ikut dikosongkan
+    try { renderSong(); renderProgression(); renderStreak(); if (typeof renderSavedChords === 'function') renderSavedChords(); if (typeof renderHist === 'function') renderHist(); if (typeof earRefreshStats === 'function') earRefreshStats(); } catch (e) { }
 }
 
 async function onAuth(user) {

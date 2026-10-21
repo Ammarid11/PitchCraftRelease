@@ -13,6 +13,7 @@ async function toggleStrum() {
     try {
         strumCtx = new (window.AudioContext || window.webkitAudioContext)();
         strumStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+        if (strumCtx.state === 'suspended') await strumCtx.resume();
         const src = strumCtx.createMediaStreamSource(strumStream);
         const hp = strumCtx.createBiquadFilter();
         hp.type = 'highpass'; hp.frequency.value = 70;
@@ -31,6 +32,8 @@ async function toggleStrum() {
         document.getElementById('chromaBars').style.display = 'flex'; renderChromaBars(new Array(12).fill(0));
         strumLoop();
     } catch (err) {
+        if (strumStream) { strumStream.getTracks().forEach(t => t.stop()); strumStream = null; }
+        if (strumCtx && strumCtx.state !== 'closed') strumCtx.close();
         micError(err); console.error(err);
     }
 }

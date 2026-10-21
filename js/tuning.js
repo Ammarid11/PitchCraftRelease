@@ -6,7 +6,7 @@ const mf = m => refA * Math.pow(2, (m - 69) / 12), mname = m => noteStrings[m % 
 
 var renderTuning = function () {
     const t = TUNINGS[document.getElementById('tunSel').value];
-    document.getElementById('tunStrings').innerHTML = t.map((m, i) => `<div class="badge" id="ts${i}" style="cursor:pointer" onclick="playRef(${i})">${6 - i}: ${mname(m)}</div>`).join('');
+    document.getElementById('tunStrings').innerHTML = t.map((m, i) => `<div class="badge" id="ts${i}" style="cursor:pointer" role="button" tabindex="0" aria-label="Bunyikan senar ${6 - i}, nada ${mname(m)}" onclick="playRef(${i})">${6 - i}: ${mname(m)}</div>`).join('');
 };
 
 setInterval(() => {

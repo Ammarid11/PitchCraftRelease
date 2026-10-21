@@ -1,13 +1,20 @@
 /* Pitchcraft — Progresi akor: susun, putar dengan metronom, pola strum, birama, hitung mundur, bagikan. */
 
 let progression = [], progTimers = [];
+const PROG_MAX = 200;   // batas progresi (menjaga ukuran pengaturan yang disinkron)
+function progPush(item, quiet) { if (progression.length >= PROG_MAX) { if (!quiet) pcToast('Batas ' + PROG_MAX + ' akor di progresi tercapai'); return false; } progression.push(item); return true; }
+function progClear() {
+    if (progression.length > 1 && !confirm('Kosongkan ' + progression.length + ' akor di progresi? Tidak bisa diurungkan.')) return;
+    progression = []; renderProgression();
+}
 // beats = jumlah ketuk per bar, sub = slot pola strum per ketuk (6/8 dihitung 2 ketuk bertitik)
 const METERS = { '4/4': { beats: 4, sub: 2 }, '3/4': { beats: 3, sub: 2 }, '6/8': { beats: 2, sub: 3 } };
 const curMeter = () => METERS[song.meter] || METERS['4/4'];
 
 function addToProgression() {
     if (!currentDetectedChordObj) { alert('Pilih atau deteksi akor dulu.'); return; }
-    progression.push({ key: currentDetectedChordObj.key, v: activeVariantIndex }); pcToast('Ditambahkan ke Progresi: ' + currentDetectedChordObj.key);
+    if (!progPush({ key: currentDetectedChordObj.key, v: activeVariantIndex })) return;
+    pcToast('Ditambahkan ke Progresi: ' + currentDetectedChordObj.key);
     renderProgression();
 }
 
@@ -15,7 +22,7 @@ function addToProgression() {
 function renderProgression() {
     const el = document.getElementById('progList'), capo = getCapo();
     el.innerHTML = progression.length
-        ? progression.map((p, i) => `<div class="badge">${p.key}${capo ? ` <small>→ ${tKey(p.key, capo)}</small>` : ''} <span onclick="progression.splice(${i},1);renderProgression()">&times;</span></div>`).join('')
+        ? progression.map((p, i) => `<div class="badge">${p.key}${capo ? ` <small>→ ${tKey(p.key, capo)}</small>` : ''} <span role="button" tabindex="0" aria-label="Hapus akor ${p.key}" onclick="progression.splice(${i},1);renderProgression()">&times;</span></div>`).join('')
         : '<span class="empty-list">Belum ada progresi. Tekan “📚 Tambah dari Kamus”, atau pilih progresi populer di panel 🎼 Kunci.</span>';
     saveSettings();
 }
@@ -26,29 +33,32 @@ function stopProgression() {
 }
 
 // Pemutar umum: list = [{key, v, beats?}], scope = selector lencana yang disorot
-function playList(list, scope) {
+function playList(list, scope, again) {
     stopProgression();
     if (!list.length) return;
     const bpm = Math.max(40, Math.min(200, +document.getElementById('bpm').value || 80)), beat = 60000 / bpm;
     const M = curMeter(), metro = document.getElementById('metroChk').checked, count = document.querySelector('[data-sync="cnt"]').checked;
     const pat = STRUM_PATS[strumPatSel] || STRUM_PATS['Sekali per birama'], barSlots = M.beats * M.sub;
+    // pola harus sepanjang satu birama: slot di luar pola dibiarkan sunyi (dulu pola diulang dari awal di tengah birama, mis. Waltz 6 sel di 4/4)
+    if (pat.length < barSlots || pat.slice(barSlots).some(x => x !== '.')) pcToast('Pola strum "' + strumPatSel + '" tidak sama panjang dengan birama ' + song.meter + '; pilih pola yang sesuai');
     const at = (t, fn) => progTimers.push(setTimeout(fn, t * beat));
     let t = 0;
-    if (count) { for (let b = 0; b < M.beats; b++) at(b, () => clickSound(b === 0)); t = M.beats; }
+    if (count && !again) { for (let b = 0; b < M.beats; b++) at(b, () => clickSound(b === 0)); t = M.beats; }
     list.forEach((p, ci) => {
         const len = p.beats || M.beats, ch = chordDatabase[p.key];
         at(t, () => document.querySelectorAll(scope).forEach((b, i) => b.classList.toggle('on', i === ci)));
         if (ch) {
             const fing = (ch.variants[p.v] || ch.variants[0]).fingering;
             for (let k = 0; k < len * M.sub; k++) {
-                const sy = pat[(k % barSlots) % pat.length];
+                const sy = pat[k % barSlots] || '.';
                 if (sy !== '.') at(t + k / M.sub, () => playChordFingering(fing, sy === 'D' ? 1 : -1, sy === 'D' ? 1 : 0.6));
             }
         }
         if (metro) for (let b = 0; b < len; b++) at(t + b, () => clickSound(b % M.beats === 0));
         t += len;
     });
-    at(t, stopProgression);
+    // loop: dibaca saat putaran selesai, jadi mematikan Loop di tengah lagu berhenti di akhir putaran itu; putaran berikutnya tanpa hitung mundur
+    at(t, () => { const lp = document.querySelector('[data-sync="loop"]'); if (lp && lp.checked) playList(list, scope, true); else stopProgression(); });
 }
 
 function playProgression() { playList(progression, '#progList .badge'); }

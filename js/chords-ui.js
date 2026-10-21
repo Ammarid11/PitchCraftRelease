@@ -29,7 +29,7 @@ function renderDetectedList() {
 
     listEl.innerHTML = detectedNotesList.map((n, i) => `
                 <div class="badge">
-                    ${i + 1}. ${n} <span onclick="removeNote(${i})">&times;</span>
+                    ${i + 1}. ${n} <span role="button" tabindex="0" aria-label="Hapus nada ${n}" onclick="removeNote(${i})">&times;</span>
                 </div>
             `).join('');
 }
@@ -74,12 +74,19 @@ function clearNotes() {
     evaluateChordFromList();
 }
 
+// bentuk yang tidak ada untuk nada dasar terpilih (mis. slash chord) dinonaktifkan, bukan baru ditolak lewat alert
+function qualRefresh() {
+    const r = document.getElementById('rootSel'), q = document.getElementById('qualSel'); if (!r || !q || !q.options) return;
+    Array.from(q.options).forEach(o => { o.disabled = !chordDatabase[r.value + o.value]; });
+    const cur = q.options[q.selectedIndex]; if (cur && cur.disabled) q.value = '';
+}
 function initPicker() {
     document.getElementById('rootSel').innerHTML = noteStrings.map(n => `<option value="${n}">${n}${FLAT[n] ? "/" + FLAT[n] : ""}</option>`).join('');
     const opt = q => `<option value="${q.k}">${q.n}</option>`;
     document.getElementById('qualSel').innerHTML = QUALITIES.filter(q => !q.ext).map(opt).join('') +
         `<optgroup label="Kamus lanjutan">${QUALITIES.filter(q => q.ext).map(opt).join('')}</optgroup>` +
         `<optgroup label="Slash chord (tidak semua akar ada)">${SLASH_SUFFIXES.map(s => `<option value="${s}">${s}</option>`).join('')}</optgroup>`;
+    qualRefresh();
     try { exemplars = JSON.parse(localStorage.getItem('pc_ex') || '{}'); } catch (e) { exemplars = {}; }
     try { savedChordsList = JSON.parse(localStorage.getItem('pc_saved') || '[]'); } catch (e) { savedChordsList = []; }
     renderSavedChords();
@@ -260,10 +267,13 @@ function analyzeFingers(f) {
     if (at.length >= 2 && (pos.length > 4 || (m === 1 && at.includes(5)))) {   // >4 jari, atau barre kecil fret 1 di senar atas (F)
         const a = at[0], b = at[at.length - 1]; let clear = true;
         for (let i = a; i <= b; i++) if (f[i] < m) clear = false;   // senar mati/terbuka di antaranya = bukan barre
-        if (clear) { barre = { fret: m, from: a, to: b }; for (let i = a; i <= b; i++) fing[i] = 1; next = 2; }
+        if (clear) { barre = { fret: m, from: a, to: b }; for (let i = a; i <= b; i++) if (f[i] === m) fing[i] = 1; next = 2; }   // hanya senar di fret barre; senar lebih tinggi diberi jari 2-4
     }
-    f.map((v, i) => ({ v, i })).filter(o => o.v > 0 && !fing[o.i]).sort((x, y) => x.v - y.v || x.i - y.i)
-        .forEach(o => { fing[o.i] = Math.min(4, next++); });
+    const rest = f.map((v, i) => ({ v, i })).filter(o => o.v > 0 && !fing[o.i]).sort((x, y) => x.v - y.v || x.i - y.i);
+    if (rest.length > 5 - next) {   // lebih banyak titik daripada jari (mis. Caug): titik sefret berbagi satu jari (barre kecil), bukan dua fret dengan nomor jari sama
+        const frets = [...new Set(rest.map(o => o.v))];
+        rest.forEach(o => { fing[o.i] = Math.min(4, next + frets.indexOf(o.v)); });
+    } else rest.forEach(o => { fing[o.i] = Math.min(4, next++); });
     return { fing, barre };
 }
 
