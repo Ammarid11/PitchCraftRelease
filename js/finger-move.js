@@ -13,12 +13,12 @@ function mvDots(key, v) {
     return { key, raw, f, fing: a.fing, barre: a.barre };
 }
 
-// Rencana perpindahan: jari di senar & fret yang sama = tetap; sisanya dipasangkan (nomor jari sama dan jarak terdekat dulu)
+// Rencana perpindahan: jari yang sama di senar & fret yang sama = tetap (posisi sama tapi jari berbeda = berpindah/ganti jari); sisanya dipasangkan (nomor jari sama dan jarak terdekat dulu)
 function mvPlan(A, B) {
     const dots = d => d.f.map((fr, s) => fr > 0 ? { s, fr, n: d.fing[s] || fr } : null).filter(Boolean);
     const da = dots(A), rb = dots(B).slice(), stay = [], ra = [];
     da.forEach(a => {
-        const i = rb.findIndex(b => b.s === a.s && b.fr === a.fr);
+        const i = rb.findIndex(b => b.s === a.s && b.fr === a.fr && b.n === a.n);   // tetap = senar, fret, DAN jari yang sama
         if (i >= 0) { stay.push({ s: a.s, fr: a.fr, an: a.n, bn: rb[i].n }); rb.splice(i, 1); } else ra.push(a);
     });
     const pairs = [];
@@ -68,7 +68,10 @@ function mvInfoHTML(A, B, P) {
     const str = d => 'senar ' + (6 - d.s) + ', fret ' + d.fr;
     const dot = c => `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:${c}"></span>`;
     let h = `${dot('#10b981')}<strong>${P.stay.length}</strong> jari tetap · ${dot('#8b5cf6')}<strong>${P.move.length}</strong> berpindah · ${dot('#ef4444')}${P.out.length} diangkat · ${dot('#38bdf8')}${P.inn.length} diletakkan`;
-    P.move.forEach(m => { h += `<br>${dot('#8b5cf6')}Jari ${m.a.n}: ${str(m.a)} → ${str(m.b)}`; });
+    P.move.forEach(m => {
+        const same = m.a.s === m.b.s && m.a.fr === m.b.fr;
+        h += `<br>${dot('#8b5cf6')}` + (same ? `Ganti jari di ${str(m.a)}: jari ${m.a.n} → jari ${m.b.n}` : `Jari ${m.a.n}${m.a.n !== m.b.n ? ' (jadi jari ' + m.b.n + ')' : ''}: ${str(m.a)} → ${str(m.b)}`);
+    });
     P.out.forEach(d => { h += `<br>${dot('#ef4444')}Angkat jari ${d.n} (${str(d)})`; });
     P.inn.forEach(d => { h += `<br>${dot('#38bdf8')}Letakkan jari ${d.n} (${str(d)})`; });
     if (P.stay.length) h += '<br><em>Biarkan jari hijau tetap di tempatnya saat pindah; itu yang membuat perpindahan terasa cepat.</em>';

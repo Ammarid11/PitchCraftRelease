@@ -11,7 +11,10 @@ const run = e => vm.runInContext(e, ctx);
 const plan = (a, b) => run(`mvPlan(mvDots('${a}',0), mvDots('${b}',0))`);
 const n = p => [p.stay.length, p.move.length, p.out.length, p.inn.length].join(',');
 
-ok(n(plan('Am', 'C')) === '2,1,0,0', 'Am -> C: 2 jari tetap, 1 berpindah (nada: ' + n(plan('Am', 'C')) + ')');
+ok(n(plan('Am', 'C')) === '2,1,0,0', 'Am -> C: jari 1 dan 2 tetap, jari 3 berpindah (hasil: ' + n(plan('Am', 'C')) + ')');
+ok(n(plan('E', 'C')) === '0,3,0,0', 'E -> C: tidak ada jari tetap; posisi D fret 2 sama tetapi jarinya berganti (hasil: ' + n(plan('E', 'C')) + ')');
+ok(run("mvPlan(mvDots('E',0), mvDots('C',0)).move.every(m => m.a.n === m.b.n)"), 'E -> C: tiap jari berpindah dipasangkan dengan nomor jari yang sama');
+ok(run("mvPlan(mvDots('E',0), mvDots('C',0)).stay.every(d => d.an === d.bn)") && run("['G','Am','F','Bm','A7','D','Em'].every(a => ['C','G','Am','E','D'].every(b => mvPlan(mvDots(a,0), mvDots(b,0)).stay.every(d => d.an === d.bn)))"), 'jari "tetap" selalu bernomor jari sama di kedua akor');
 ok(n(plan('C', 'C')) === '3,0,0,0', 'akor sama: semua jari tetap');
 const p = plan('G', 'C'); ok(p.stay.length + p.move.length + p.out.length === run("mvDots('G',0).f.filter(v=>v>0).length"), 'G -> C: jari asal habis terbagi');
 

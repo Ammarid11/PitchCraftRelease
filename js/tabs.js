@@ -1,6 +1,6 @@
 /* Pitchcraft — Menu tab, tip singkat tiap tab, dan panel Bantuan (cara pakai). */
 
-const APP_VER = 'v29';   // samakan dengan VERSI di sw.js; tampil di panel Bantuan untuk memastikan versi yang berjalan
+const APP_VER = 'v30';   // samakan dengan VERSI di sw.js; tampil di panel Bantuan untuk memastikan versi yang berjalan
 
 // [id tab, ikon, nama, tip satu kalimat, cara pakai]
 const GUIDE = [

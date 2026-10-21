@@ -50,7 +50,7 @@ Dimuat berurutan; **urutan di bagian bawah `index.html` penting**.
 ## Merilis perubahan
 
 1. Jalankan `node --check` pada file JS yang berubah dan semua tes di bawah.
-2. Naikkan `VERSI` di `sw.js` **dan** `APP_VER` di `js/tabs.js` (harus sama, mis. `pitchcraft-v29` dan `v29`) agar cache lama dibuang.
+2. Naikkan `VERSI` di `sw.js` **dan** `APP_VER` di `js/tabs.js` (harus sama, mis. `pitchcraft-v30` dan `v30`) agar cache lama dibuang.
 3. Bila menambah file baru di `js/`, daftarkan juga di `FILES` pada `sw.js` dan di bagian bawah `index.html`.
 4. Folder `icons/` harus ikut diunggah.
 
