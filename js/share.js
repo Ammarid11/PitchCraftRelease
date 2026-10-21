@@ -1,4 +1,4 @@
-/* Pitchcraft — Kartu bagikan (roadmap #8): gambar progresi atau skor latihan lewat <canvas>, lalu Web Share API (cadangan: unduh PNG).
+/* Pitchcraft — Kartu bagikan (roadmap #8): gambar progresi, skor latihan, atau hasil ronde Latih Telinga lewat <canvas>, lalu Web Share API (cadangan: unduh PNG).
  * Lapisan tampilan saja: tidak menyentuh deteksi nada/akor, dan tidak mengirim apa pun ke server (gambar dibuat di perangkat). */
 
 const SC_W = 1080, SC_H = 1920;
@@ -123,6 +123,40 @@ function scScore() {
     return { cv, name: 'pitchcraft-skor.png', text: txt };
 }
 
+/* ---------- Kartu hasil Latih Telinga ---------- */
+function scEar() {
+    const d = typeof earData === 'function' ? earData() : {}, L = d.last;
+    if (!L || !L.kind) return { err: 'Belum ada ronde Latih Telinga. Selesaikan satu ronde di tab Latih dulu.' };
+    const ok = +L.ok || 0, bad = +L.bad || 0, tot = ok + bad || 1, acc = Math.round(ok / tot * 100);
+    const kn = ((typeof EAR_KINDS !== 'undefined' && EAR_KINDS.find(k => k[0] === L.kind)) || [0, 'Latih Telinga'])[1];
+    const lb = (typeof earLabels === 'function' ? earLabels(L.kind) : {})[L.level] || L.level;
+    const streak = calcStreak(daysOf(getSessions())), have = lsGet('pc_badges', []).length;
+    const cv = scBase('LATIH TELINGA'), c = cv.getContext('2d');
+
+    scT(c, kn, 80, 430, 76, '#fff', { f: SC_DISP, w: 700, max: 920 });
+    scT(c, lb, 80, 492, 32, '#c4b5fd', { max: 920, w: 700 });
+    scT(c, new Date(L.t || Date.now()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }), 80, 540, 28, '#8391a7');
+
+    c.save(); c.shadowColor = 'rgba(139,92,246,.85)'; c.shadowBlur = 70;
+    scT(c, ok + '/' + tot, SC_W / 2, 930, 320, '#fff', { f: SC_DISP, w: 700, a: 'center', max: 900 });
+    c.restore();
+    scT(c, 'tebakan benar', SC_W / 2, 1010, 46, '#c4b5fd', { a: 'center', w: 700 });
+    if (L.best) {
+        c.fillStyle = 'rgba(245,158,11,.16)'; scRR(c, SC_W / 2 - 190, 1050, 380, 68, 34); c.fill();
+        c.lineWidth = 2; c.strokeStyle = 'rgba(245,158,11,.7)'; c.stroke();
+        scT(c, '🏆 Rekor pribadi', SC_W / 2, 1096, 32, '#fcd34d', { a: 'center', w: 700 });
+    }
+    scStat(c, 80, 1190, 290, 190, ok, 'benar', '#6ee7b7');
+    scStat(c, 395, 1190, 290, 190, bad, 'salah', '#fca5a5');
+    scStat(c, 710, 1190, 290, 190, acc + '%', 'akurasi');
+    scStat(c, 80, 1410, 290, 190, (+L.dur || 0) + ' dtk', 'durasi');
+    scStat(c, 395, 1410, 290, 190, '🔥 ' + streak, 'hari beruntun');
+    scStat(c, 710, 1410, 290, 190, have + '/' + BADGES.length, 'lencana');
+
+    const txt = 'Latih Telinga Pitchcraft (' + kn + ' · ' + lb + '): ' + ok + ' dari ' + tot + ' benar 👂';
+    return { cv, name: 'pitchcraft-telinga.png', text: txt };
+}
+
 /* ---------- Pratinjau, bagikan, unduh ---------- */
 async function scOpen(kind) {
     try {   // tunggu huruf Google Fonts (kalau ada) supaya kartu tidak memakai huruf cadangan
@@ -130,7 +164,7 @@ async function scOpen(kind) {
             Promise.all([document.fonts.load('700 40px "Space Grotesk"'), document.fonts.load('600 30px "Plus Jakarta Sans"')]),
             new Promise(r => setTimeout(r, 800))]);
     } catch (e) { }
-    let r; try { r = kind === 'score' ? scScore() : scProgression(); } catch (e) { console.error(e); alert('Gagal membuat kartu: ' + (e.message || e)); return; }
+    let r; try { r = kind === 'score' ? scScore() : kind === 'ear' ? scEar() : scProgression(); } catch (e) { console.error(e); alert('Gagal membuat kartu: ' + (e.message || e)); return; }
     if (r.err) { alert(r.err); return; }
     const blob = await new Promise(res => { try { r.cv.toBlob(res, 'image/png'); } catch (e) { res(null); } });
     if (!blob) { alert('Gagal membuat gambar di browser ini.'); return; }

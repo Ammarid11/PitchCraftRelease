@@ -10,7 +10,7 @@ const ctx = vm.createContext({ console, Math, Date, Promise, Array, String, Numb
     location: { protocol: 'https:', hostname: 'contoh.id', host: 'contoh.id' },
     progression: [], song: { meter: '4/4' }, strumPatSel: 'Pop (↓ ↓↑ ↑↓↑)', getCapo: () => 2, tKey: (k, d) => k + '+' + d,
     MODE_LABEL: { level: 'Kuis tingkat' }, BADGES: new Array(9), daysOf: () => ({}), calcStreak: () => 4, getSessions: () => [], lsGet: (k, d) => ['first', 'st3'],
-    loadHist: () => [], pcToast() {}, URL: {}, File: function () {} });
+    loadHist: () => [], earData: () => ({}), EAR_KINDS: [['akor', 'Jenis akor'], ['interval', 'Interval']], earLabels: () => ({ mudah: 'Mudah · m3, M3, P5, P8' }), pcToast() {}, URL: {}, File: function () {} });
 vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'share.js'), 'utf8'), ctx);
 const run = e => vm.runInContext(e, ctx);
 
@@ -25,4 +25,10 @@ run("loadHist = () => [{ t: 1760000000000, mode: 'level', level: 'dasar', dur: 6
 drawn.length = 0; const s = run('scScore()');
 ok(s.cv && s.text.includes('12 akor/menit') && s.text.includes('24 dari 26'), 'kartu skor terbentuk, teks benar');
 ok(drawn.includes('92%') && drawn.includes('2/9') && drawn.some(t => t.includes('Rekor')), 'akurasi, lencana, dan rekor tampil');
+// kartu Latih Telinga
+ok(run('scEar()').err, 'Latih Telinga tanpa ronde: pesan kesalahan, bukan crash');
+run("earData = () => ({ last: { kind: 'interval', level: 'mudah', ok: 8, bad: 2, dur: 41, t: 1760000000000, best: true } })");
+drawn.length = 0; const e = run('scEar()');
+ok(e.cv && e.name === 'pitchcraft-telinga.png' && e.text.includes('Interval · Mudah') && e.text.includes('8 dari 10'), 'kartu telinga terbentuk, teks benar');
+ok(drawn.includes('8/10') && drawn.includes('80%') && drawn.some(t => t.includes('Rekor')) && drawn.includes('Interval'), 'skor, akurasi, rekor, dan jenis tampil');
 console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes kartu bagikan lulus'); process.exit(fails ? 1 : 0);

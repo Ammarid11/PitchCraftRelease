@@ -211,10 +211,12 @@
             <div class="picker-row" style="margin-top:8px"><button class="btn-variant" onclick="scOpen('score')" title="Gambar skor sesi terakhir">🖼 Bagikan skor terakhir</button><button class="btn-variant" onclick="clearHist()">🗑 Hapus riwayat</button></div>
         </section>
         <section class="card" id="earCard" data-tab="latih">
-            <div class="card-head"><h2>Latih Telinga</h2><p>App memainkan bunyi, kamu menebaknya: jenis akor, interval, urutan akor, arah melodi, atau nada. Tanpa mikrofon, jadi bisa dilatih di mana saja.</p></div>
+            <div class="card-head"><h2>Latih Telinga</h2><p>App memainkan bunyi, kamu menebaknya: jenis akor, interval, urutan akor, arah melodi, derajat nada, nama nada, atau nama akor. Pilih jenis latihan, baca “Cara latihan” yang tampil, lalu tekan Mulai. Tanpa mikrofon, jadi bisa dilatih di mana saja.</p></div>
             <div class="picker-row"><label>Latihan <select id="earKind" onchange="earKindChange()" aria-label="Jenis Latih Telinga"></select></label>
                 <label>Tingkat <select id="earLevel" onchange="earOpt()" aria-label="Tingkat Latih Telinga"></select></label>
+                <label id="earRefLbl" hidden>Acuan <select id="earRef" onchange="earOpt()" aria-label="Acuan nama nada"><option value="auto">Otomatis</option><option value="kunci">Ikut kunci 🎼</option><option value="acak">Bervariasi</option><option value="c">C tetap</option></select></label>
                 <label id="earArpLbl"><input type="checkbox" id="earArp" onchange="earOpt()"> Petik satu-satu</label></div>
+            <div id="earLive" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
             <div id="earStage" class="ear-stage"></div>
             <div id="earStats" class="chord-detail-row" style="margin-top:12px;font-size:.8rem"></div>
         </section>

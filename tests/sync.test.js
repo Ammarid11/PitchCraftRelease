@@ -128,5 +128,24 @@ function makeDevice() {
     ok(A.run('getMisses().length') === 300 && S.misses.size === 352, 'perangkat menyimpan 300 terbaru, server menyimpan semuanya');
     ok(D.run("cleanMiss({ id: 'a', t: 1, want: '', got: 'C' })") === null, 'catatan salah tidak valid ditolak');
 
+    // 12. statistik Latih Telinga: ikut sinkron antar perangkat, digabung (tidak menimpa), dan aman diulang
+    S = makeServer(); A = makeDevice(); B = makeDevice();
+    A.run("progression = [{key:'Am',v:0}]; lsSet('pc_ear', { kind: 'interval', best: { 'interval.mudah': 8 }, st_interval: { m3: [10, 8] }, conf_interval: { 'm3>M3': 2 } })");
+    await A.sync(S);
+    ok(S.settings && S.settings.data.ear && S.settings.data.ear.best['interval.mudah'] === 8 && !('kind' in S.settings.data.ear), 'statistik telinga terkirim ke server tanpa pilihan tampilan');
+    B.run("lsSet('pc_ear', { kind: 'nada', best: { 'nada.sulit': 6, 'interval.mudah': 9 }, st_interval: { m3: [4, 4], M3: [6, 5] } })");
+    await B.sync(S);
+    const eb = JSON.parse(B.store.pc_ear);
+    ok(eb.kind === 'nada' && eb.best['interval.mudah'] === 9 && eb.best['nada.sulit'] === 6, 'perangkat B: pilihan lokal utuh, rekor terbesar dipakai');
+    ok(eb.st_interval.m3.join() === '10,8' && eb.st_interval.M3.join() === '6,5' && eb.conf_interval['m3>M3'] === 2, 'perangkat B: hitungan digabung dengan data dari A');
+    const before = S.calls.length; await B.sync(S); await B.sync(S);
+    ok(JSON.stringify(JSON.parse(B.store.pc_ear).st_interval) === JSON.stringify(eb.st_interval), 'sinkron berulang tidak menggandakan angka');
+    const C2 = makeDevice(); await C2.sync(S);
+    ok(C2.store.pc_ear && JSON.parse(C2.store.pc_ear).best['interval.mudah'] === 8, 'perangkat baru menerima statistik telinga dari akun');
+    const ex = D.run("JSON.stringify(settingsData())"); ok(!ex.includes('"ear"'), 'tanpa statistik telinga, pengaturan tidak memuat kunci ear (hash tidak berubah)');
+    D.run("lsSet('pc_ear', { st: { maj: [3, 2] } })"); ok(JSON.parse(D.run("JSON.stringify(settingsData())")).ear.st.maj.join() === '3,2', 'cadangan manual (ekspor) memuat statistik telinga');
+    D.run("importProgress({ settings: { ear: { st: { maj: [9, 9], min: [2, 1] } } } })");
+    ok(JSON.parse(D.store.pc_ear).st.maj.join() === '9,9' && JSON.parse(D.store.pc_ear).st.min.join() === '2,1', 'impor cadangan menggabung statistik telinga');
+
     console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes sinkron lulus'); process.exit(fails ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

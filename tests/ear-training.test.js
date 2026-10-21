@@ -4,6 +4,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 let fails = 0; const ok = (c, m) => { console.log((c ? 'LULUS  ' : 'GAGAL  ') + m); if (!c) fails++; };
 
+const noteStrings_ = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const store = {}, els = {}, plucks = []; let clock = 0, synced = 0;
 const el = id => els[id] = els[id] || { innerHTML: '', value: '', checked: false };
 const ctx = vm.createContext({ console, Math, JSON, Date, Set, Map, Object, Array, Number, String, isNaN, parseInt, setTimeout, clearTimeout,
@@ -92,9 +93,9 @@ const tc = run("earTopConf({ 'min7>min': 3, 'maj>min': 1 })"); ok(tc && tc.want 
 ok(run("earTopConf({ 'maj>min': 1 })") === null, 'tertukar hanya sekali: belum ditampilkan');
 
 // 10b. jenis lanjutan: interval, urutan akor, arah melodi, nada
-const KINDS = ['interval', 'progresi', 'melodi', 'nada'];
+const KINDS = ['interval', 'progresi', 'melodi', 'nada', 'namanada', 'akorkey'];
 // deck seimbang untuk semua jenis dan tingkat
-KINDS.forEach(k => ['mudah', 'sedang', 'sulit'].forEach(lv => {
+KINDS.forEach(k => run(`Object.keys(earLevels('${k}'))`).forEach(lv => {
     const qs = run(`earLevels('${k}').${lv}`); let okd = qs.length >= 2;
     for (let t = 0; t < 100; t++) { const d = run(`earDeckOf(earLevels('${k}').${lv}, 10)`), cnt = qs.map(q => d.filter(x => x === q).length); if (d.length !== 10 || d.some(x => !qs.includes(x)) || Math.max(...cnt) - Math.min(...cnt) > 1) okd = false; }
     ok(okd, `deck ${k}/${lv}: seimbang dan hanya berisi jawaban tingkat itu`);
@@ -127,6 +128,34 @@ for (let t = 0; t < 300; t++) {
 }
 ok(badN === 0, 'nada: arah dan jarak (mudah) serta derajat dari acuan (sedang/sulit) benar');
 
+// nama nada: nada tepat, acuan C di awal kecuali tingkat ahli, jangkauan wajar
+let badNN = 0;
+['mudah', 'sedang', 'sulit', 'ahli'].forEach(lv => run(`EAR_X.namanada.levels.${lv}`).forEach(id => [0.1, 0.9].forEach(r => {
+    const p = run(`earBuild('namanada', '${lv}', '${id}', 'C', () => ${r})`), pc = run(`noteStrings.indexOf('${id}')`), t = p.seq[p.seq.length - 1];
+    if (t.m % 12 !== pc || t.m < 48 || t.m > 71 || (lv === 'ahli' ? p.seq.length !== 1 || p.ref : p.seq.length !== 2 || p.seq[0].m !== 60 + p.refPc || p.refPc === pc || !p.ref)) badNN++;
+})));
+ok(badNN === 0, 'nama nada: nada target tepat untuk semua jawaban/tingkat; acuan C hanya di Mudah–Sulit, tanpa acuan di Ahli');
+ok(run('EAR_X.namanada.levels.sulit.length') === 12 && run('EAR_X.namanada.levels.ahli.length') === 12 && run("EAR_X.namanada.names['A#']") === 'A#/Bb', 'nama nada: 12 nada kromatik dengan nama bemol');
+ok(run("earBuild('namanada', 'ahli', 'F#', 'C', () => 0.9).seq[0].m") === 48 + 6 + 12 && run("earBuild('namanada', 'ahli', 'F#', 'C', () => 0.1).seq[0].m") === 54, 'nama nada: oktaf rendah/tinggi dipilih acak');
+plucks.length = 0; run("earPlayP('namanada', earBuild('namanada', 'sedang', 'E', 'C', Math.random, 0))"); ok(plucks.length === 2 && Math.abs(plucks[0].f - 440 * Math.pow(2, (60 - 69) / 12)) < 0.01, 'nama nada: acuan C4 berbunyi lalu nada target');
+// acuan bervariasi
+{ const refs = new Set(); let badR = 0;
+  for (let t = 0; t < 400; t++) { const q = noteStrings_[t % 12], p = run(`earBuild('namanada', 'sulit', '${q}', 'C')`); refs.add(p.refPc); if (p.refPc === t % 12 || p.seq[0].m !== 60 + p.refPc) badR++; }
+  ok(refs.size >= 10 && badR === 0, 'nama nada: acuan bervariasi (' + refs.size + ' nada berbeda), tidak pernah sama dengan target');
+  const nat = new Set(); for (let t = 0; t < 300; t++) nat.add(run("earBuild('namanada', 'mudah', 'E', 'C').refPc")); ok(nat.size >= 4 && [...nat].every(x => [0, 2, 4, 5, 7, 9, 11].includes(x)), 'nama nada mudah: acuan dari nada putih saja, beragam');
+  ok(run("earBuild('namanada', 'sedang', 'G', 'C', () => 0.4, 2).refPc") === 2, 'perbandingan bunyi memakai acuan yang sama dengan soal');
+}
+// nama akor: semua akor ada di kamus dengan bentuk layak, acuan C di awal kecuali ahli
+let badAK = [];
+['mudah', 'sedang', 'sulit', 'ahli'].forEach(lv => run(`EAR_X.akorkey.levels.${lv}`).forEach(id => {
+    const c = run('chordDatabase')[id], p = run(`earBuild('akorkey', '${lv}', '${id}', 'C')`);
+    if (!c || c.variants[0].fingering.filter(f => f >= 0).length < 3 || p.keys[p.keys.length - 1] !== id || (lv === 'ahli' ? p.keys.length !== 1 : p.keys.join() !== 'C,' + id)) badAK.push(lv + ':' + id);
+}));
+ok(badAK.length === 0, 'nama akor: semua akor tersedia di kamus dan urutan acuan benar' + (badAK.length ? ': ' + badAK.join(',') : ''));
+ok(run('Object.keys(EAR_X.akorkey.names).every(k => EAR_X.akorkey.hint[k])') && run("EAR_X.akorkey.names['A#']") === 'A#/Bb', 'nama akor: tiap akor punya nama dan penjelasan');
+plucks.length = 0; run("earPlayP('akorkey', earBuild('akorkey', 'sedang', 'Am', 'C'))"); ok(plucks.length >= 8 && Math.max(...plucks.map(p => p.t)) >= 1.6, 'nama akor: acuan C lalu akor target berjeda 1,6 dtk');
+plucks.length = 0; run("earPlayP('akorkey', earBuild('akorkey', 'ahli', 'Am', 'C'))"); ok(plucks.length >= 4 && Math.max(...plucks.map(p => p.t)) < 1, 'nama akor: tingkat ahli hanya membunyikan satu akor');
+
 // ronde penuh untuk tiap jenis: sesi, rekor, statistik, umpan balik, perbandingan bunyi
 KINDS.forEach(k => {
     els.earKind.value = k; els.earLevel.value = 'mudah'; els.earArp.checked = false; run('earOpt()');
@@ -150,6 +179,13 @@ KINDS.forEach(k => {
     ok(run(`earData().best['${k}.mudah']`) === 8 && run(`Object.values(earData().st_${k}).reduce((a, v) => a + v[0], 0)`) === 10, `${k}: rekor dan statistik tersimpan terpisah dari jenis akor`);
     ok(run('earData().best.mudah') === 8 && !('st_akor' in run('earData()')), `${k}: data jenis akor lama tidak tercampur`);
 });
+['namanada', 'akorkey'].forEach(k => {
+    els.earKind.value = k; els.earLevel.value = 'ahli'; run('earOpt()'); run('earStart()');
+    ok(run('ear.level') === 'ahli' && run('ear.p.ref') === false, `${k} ahli: ronde dimulai tanpa acuan`);
+    for (let i = 0; i < 10; i++) { clock += 2000; run('earAnswer(ear.q)'); run('earNext()'); }
+    const ls = run('getSessions()').slice(-1)[0];
+    ok(ls.level === k + '-ahli' && ls.ok === 10 && run(`earData().best['${k}.ahli']`) === 10, `${k} ahli: sesi ${k}-ahli dan rekor tercatat`);
+});
 els.earKind.value = 'nada'; els.earLevel.value = 'sulit'; run('earOpt()'); run('earStart()');
 ok(run('ear.level') === 'sulit' && run('ear.p.t') > 0 && els.earStage.innerHTML.includes('Do'), 'nada sulit: opsi derajat Do–Si tampil dan acuan tersedia');
 for (let i = 0; i < 10; i++) { clock += 2000; run('earAnswer(ear.q)'); run('earNext()'); }
@@ -165,12 +201,133 @@ els.earKind.value = 'akor'; run('earKindChange()');
 ok(run("earWeak({ M3: [10, 9], m3: [8, 2] }, EAR_X.interval.names).id") === 'm3' && run("earWeak({ min7: [8, 2] }, EAR_X.interval.names)") === null, 'statistik: jenis lanjutan memakai nama jenisnya sendiri');
 ok(run("earTopConf({ 'M3>m3': 3 }, EAR_X.interval.names).want") === 'M3' && run("earTopConf({ 'maj>min': 3 }, EAR_X.interval.names)") === null, 'tertukar: id jenis lain diabaikan');
 
+// 10c. panduan cara latihan: tiap jenis punya penjelasan di layar awal dan petunjuk di tiap soal
+KINDS.concat(['akor']).forEach(k => {
+    const g = run(`EAR_GUIDE.${k}`); ok(g && g.task && g.steps.length >= 3 && g.tip, `${k}: panduan lengkap (tugas, langkah, tip)`);
+    els.earKind.value = k; els.earLevel.value = 'mudah'; run('earOpt()');
+    ok(els.earStage.innerHTML.includes('Cara latihan') && g.steps.every(t => els.earStage.innerHTML.includes(run(`esc(${JSON.stringify(t)})`))), `${k}: layar awal menampilkan semua langkah cara latihan`);
+    run('earStart()');
+    ok(els.earStage.innerHTML.includes(run(`esc(earTask('${k}', 'mudah'))`)) && els.earStage.innerHTML.includes('<summary>Cara latihan</summary>'), `${k}: tiap soal menampilkan petunjuk tugas dan cara latihan`);
+});
+els.earKind.value = 'namanada'; els.earLevel.value = 'sedang'; run('earOpt()'); run('earStart()');
+ok(els.earStage.innerHTML.includes('Nada acuan (bunyi pertama)') && els.earStage.innerHTML.includes(run("esc(noteStrings[ear.p.refPc])")), 'nama nada: nama nada acuan tertulis di layar sebelum menjawab');
+els.earLevel.value = 'ahli'; run('earOpt()'); run('earStart()');
+ok(!els.earStage.innerHTML.includes('Nada acuan') && els.earStage.innerHTML.includes('tanpa acuan'), 'nama nada ahli: tidak ada acuan, petunjuk menyebut tanpa acuan');
+els.earKind.value = 'akorkey'; els.earLevel.value = 'mudah'; run('earOpt()'); run('earStart()');
+ok(els.earStage.innerHTML.includes('Akor acuan (bunyi pertama)') && els.earStage.innerHTML.includes('C mayor'), 'nama akor: akor acuan tertulis di layar');
+els.earKind.value = 'nada'; els.earLevel.value = 'sedang'; run('earOpt()'); run('earStart()');
+ok(els.earStage.innerHTML.includes('acuan <strong>Do</strong>') && run("earTask('nada', 'mudah')").includes('lebih tinggi'), 'nada: petunjuk berbeda untuk Mudah (mana lebih tinggi) dan Sedang/Sulit (acuan Do)');
+els.earKind.value = 'akor'; els.earLevel.value = 'mudah'; run('earOpt()');
+
+// 10d. acuan Nama nada: ikut kunci / bervariasi / C tetap
+{
+    const setKey = (pc, mode) => { el('keyRoot').value = String(pc); el('keyMode').value = mode; };
+    const names = (lv, rm, pc, mode) => run(`earNoteSet('${lv}', '${rm}', { pc: ${pc}, mode: '${mode}' })`).join();
+    ok(names('mudah', 'kunci', 0, 'maj') === 'C,E,G,A' && names('sedang', 'kunci', 0, 'maj') === 'C,D,E,F,G,A,B', 'ikut kunci C mayor: sama dengan daftar lama');
+    ok(names('mudah', 'kunci', 7, 'maj') === 'G,B,D,E' && names('sedang', 'kunci', 7, 'maj') === 'G,A,B,C,D,E,F#', 'ikut kunci G mayor: tonika, terts, kuint, sekt dan 7 nada kunci');
+    ok(names('mudah', 'kunci', 9, 'min') === 'A,C,E,F' && names('sedang', 'kunci', 9, 'min') === 'A,B,C,D,E,F,G', 'ikut kunci A minor: nada kunci minor alami');
+    ok(run("earNoteSet('sulit', 'kunci', { pc: 7, mode: 'maj' }).length") === 12 && names('mudah', 'acak', 7, 'maj') === 'C,E,G,A' && names('ahli', 'kunci', 7, 'maj').split(',').length === 12, 'Sulit, Bervariasi, C tetap, dan Ahli tidak mengikuti kunci');
+    ok(run("earRefMode('namanada', 'mudah', 'auto')") === 'kunci' && run("earRefMode('namanada', 'sedang', 'auto')") === 'kunci' && run("earRefMode('namanada', 'sulit', 'auto')") === 'acak', 'otomatis: Mudah/Sedang ikut kunci, Sulit bervariasi');
+    ok(run("earRefMode('namanada', 'ahli', 'kunci')") === null && run("earRefMode('akor', 'mudah', 'kunci')") === null && run("earRefMode('namanada', 'sulit', 'c')") === 'c', 'Ahli dan jenis lain tanpa acuan; pilihan manual dihormati');
+
+    // ronde penuh, kunci G mayor, Mudah, otomatis
+    setKey(7, 'maj'); els.earKind.value = 'namanada'; els.earLevel.value = 'mudah'; els.earRef.value = 'auto'; run('earKindChange()'); els.earLevel.value = 'mudah'; run('earOpt()');
+    ok(els.earRefLbl.hidden === false && els.earStage.innerHTML.includes('Acuan ikut kunci') && els.earStage.innerHTML.includes('G mayor'), 'layar awal menyebut acuan ikut kunci G mayor');
+    run('earStart()');
+    ok(run('ear.rm') === 'kunci' && run('ear.qs.join()') === 'G,B,D,E', 'ronde ikut kunci G: jawaban G, B, D, E');
+    let okAll = true, refOk = true;
+    for (let i = 0; i < 10; i++) {
+        if (run('ear.p.refPc') !== 7 || run('ear.p.seq[0].m') !== 67 || !run('ear.qs').includes(run('ear.q'))) refOk = false;
+        if (i === 0) ok(els.earStage.innerHTML.includes('tonika kunci G mayor'), 'soal menampilkan acuan G sebagai tonika kunci');
+        clock += 2000; run('earAnswer(ear.q)'); if (i === 0) ok(els.earStage.innerHTML.includes('derajat ke-') && els.earStage.innerHTML.includes('kunci G mayor'), 'umpan balik menyebut derajat dalam kunci');
+        run('earNext()');
+    }
+    ok(refOk && run('ear.ok') === 10, 'semua soal: acuan G (G4), target selalu di dalam kunci');
+    ok(run('getSessions().slice(-1)[0].level') === 'namanada-mudah', 'sesi tercatat sebagai namanada-mudah');
+
+    // C tetap
+    els.earRef.value = 'c'; run('earOpt()'); els.earLevel.value = 'sulit'; run('earOpt()'); run('earStart()');
+    let cOk = true; for (let i = 0; i < 10; i++) { if (run('ear.p.refPc') !== 0) cOk = false; run('earAnswer(ear.q)'); run('earNext()'); }
+    ok(cOk && run('ear.rm') === 'c', 'C tetap: acuan selalu C');
+    // bervariasi
+    els.earRef.value = 'acak'; run('earOpt()'); els.earLevel.value = 'sulit'; run('earOpt()');
+    const seen = new Set(); for (let r = 0; r < 4; r++) { run('earStart()'); for (let i = 0; i < 10; i++) { seen.add(run('ear.p.refPc')); run('earAnswer(ear.q)'); run('earNext()'); } }
+    ok(seen.size >= 6 && run('ear.rm') === 'acak', 'bervariasi: acuan berganti-ganti (' + seen.size + ' nada berbeda)');
+    // Sulit + otomatis = bervariasi, 12 nada; kunci minor
+    els.earRef.value = 'auto'; run('earOpt()'); run('earStart()');
+    ok(run('ear.rm') === 'acak' && run('ear.qs.length') === 12, 'Sulit otomatis: bervariasi dengan 12 pilihan');
+    setKey(9, 'min'); els.earRef.value = 'kunci'; els.earLevel.value = 'sedang'; run('earOpt()'); run('earStart()');
+    ok(run('ear.qs.join()') === 'A,B,C,D,E,F,G' && run('ear.p.refPc') === 9 && els.earStage.innerHTML.includes('A minor'), 'kunci A minor, Sedang: 7 nada A minor alami, acuan A');
+    // Ahli: pilihan Acuan disembunyikan, tanpa acuan
+    els.earLevel.value = 'ahli'; run('earOpt()'); ok(els.earRefLbl.hidden === true && els.earStage.innerHTML.includes('Tingkat ini tanpa acuan'), 'Ahli: pilihan Acuan disembunyikan, tanpa acuan');
+    run('earStart()'); ok(run('ear.p.ref') === false, 'Ahli: soal tanpa acuan');
+    // jenis lain: pilihan Acuan disembunyikan; pilihan tersimpan
+    els.earKind.value = 'interval'; run('earKindChange()'); ok(els.earRefLbl.hidden === true, 'jenis selain Nama nada: pilihan Acuan disembunyikan');
+    ok(run('earData().ref') === 'kunci', 'pilihan Acuan tersimpan di pc_ear');
+    // bersih-bersih
+    setKey('', 'maj'); els.earRef.value = 'auto'; els.earKind.value = 'akor'; els.earLevel.value = 'mudah'; run('earKindChange()'); els.earLevel.value = 'mudah'; run('earOpt()');
+}
+
+// 10e. ulasan akhir ronde, ringkasan terakhir, pengumuman pembaca layar, penanda bukan hanya warna
+{
+    els.earKind.value = 'interval'; els.earLevel.value = 'mudah'; run('earOpt()'); run('earStart()');
+    ok(els.earLive.textContent.includes('Soal 1 dari 10'), 'pembaca layar: soal baru diumumkan');
+    const bad = [1, 5]; plucks.length = 0;
+    for (let i = 0; i < 10; i++) {
+        const q = run('ear.q'); clock += 2500; const w = run(`earLevels('interval').mudah.find(x => x !== '${q}')`);
+        run(`earAnswer('${bad.includes(i) ? w : q}')`);
+        if (i === 1) ok(els.earLive.textContent.startsWith('Salah.') && els.earLive.textContent.includes(run("earName('interval', ear.q)")), 'pembaca layar: hasil salah diumumkan beserta jawaban benar');
+        if (i === 1) ok(els.earStage.innerHTML.includes('✓ ') && els.earStage.innerHTML.includes('✗ ') && els.earStage.innerHTML.includes('jawaban benar"'), 'opsi benar/salah ditandai ✓/✗ dan label, bukan hanya warna');
+        if (i === 0) ok(els.earLive.textContent.startsWith('Benar.'), 'pembaca layar: hasil benar diumumkan');
+        run('earNext()');
+    }
+    ok(els.earLive.textContent.includes('Ronde selesai. 8 dari 10 benar'), 'pembaca layar: hasil ronde diumumkan');
+    ok(run('ear.log.length') === 10 && run('ear.log.filter(x => !x.right).length') === 2, 'log: tiap soal tercatat, 2 salah');
+    const html = els.earStage.innerHTML;
+    ok(html.includes('soal yang salah (2)') && html.includes('Soal 2:') && html.includes('Soal 6:') && !html.includes('Soal 3:'), 'ulasan: hanya soal yang salah ditampilkan');
+    ok(html.includes("earReviewPlay(1,'pick')") && html.includes("earReviewPlay(5,'right')") && html.includes("scOpen('ear')"), 'ulasan: tombol dengar tebakan, jawaban benar, dan bagikan');
+    // ulasan membunyikan soal yang benar-benar sama dengan soal aslinya, dan tebakan sesuai pilihan
+    const it = run('ear.log[1]'); plucks.length = 0; run("earReviewPlay(1, 'right')");
+    const expect = run('(() => { const it = ear.log[1]; return it.p.seq.map(n => mf(n.m)); })()');
+    ok(plucks.length === 2 && Math.abs(plucks[0].f - expect[0]) < 1e-6 && Math.abs(plucks[1].f - expect[1]) < 1e-6, 'ulasan: jawaban benar memutar nada soal asli');
+    plucks.length = 0; run("earReviewPlay(1, 'pick')");
+    const pk = run("earBuild('interval', ear.level, ear.log[1].picked, ear.log[1].root, () => 0.4)");
+    ok(plucks.length === 2 && Math.abs((plucks[1].f / plucks[0].f) - Math.pow(2, (pk.hi - pk.lo) / 12)) < 1e-6, 'ulasan: tebakan memutar interval yang dipilih (jarak sesuai tebakan)');
+    plucks.length = 0; run("earReviewPlay(99, 'pick')"); ok(plucks.length === 0, 'ulasan: indeks tak valid tidak membunyikan apa pun');
+    // ringkasan terakhir untuk kartu bagikan
+    const L = run('earData().last'); ok(L && L.kind === 'interval' && L.level === 'mudah' && L.ok === 8 && L.bad === 2 && L.dur >= 1, 'ringkasan ronde terakhir tersimpan untuk kartu bagikan');
+    // ronde sempurna: tidak ada ulasan salah
+    run('earStart()'); for (let i = 0; i < 10; i++) { clock += 2000; run('earAnswer(ear.q)'); run('earNext()'); }
+    ok(els.earStage.innerHTML.includes('Semua jawaban benar') && !els.earStage.innerHTML.includes('earReviewPlay'), 'ronde sempurna: tanpa daftar ulasan');
+    // jenis akor juga punya ulasan
+    els.earKind.value = 'akor'; run('earKindChange()'); els.earLevel.value = 'mudah'; run('earOpt()'); run('earStart()');
+    for (let i = 0; i < 10; i++) { clock += 2000; const q = run('ear.q'); run(`earAnswer('${i === 0 ? (q === 'maj' ? 'min' : 'maj') : q}')`); run('earNext()'); }
+    plucks.length = 0; run("earReviewPlay(0, 'right')"); ok(plucks.length >= 4 && els.earStage.innerHTML.includes('soal yang salah (1)'), 'jenis akor: ulasan membunyikan akor soal yang salah');
+}
+
+// 10f. statistik ikut cadangan dan sinkron: bersihkan dan gabungkan
+{
+    const C = e => JSON.stringify(run(e));
+    ok(C("pcEarClean({ best: { 'interval.mudah': 8, x: 0 }, st: { maj: [10, 12], min: [0, 0] }, conf: { 'maj>min': 3 }, kind: 'interval', last: { ok: 1 }, st_nada: 5 })") === '{"best":{"interval.mudah":8},"st":{"maj":[10,10]},"conf":{"maj>min":3}}',
+        'bersihkan: hanya angka statistik; pilihan, ringkasan terakhir, dan data rusak dibuang');
+    ok(C("pcEarClean('x')") === '{}' && C("pcEarClean([1])") === '{}' && C("pcEarClean({ best: 5, st: [1] })") === '{}', 'bersihkan: masukan rusak menjadi kosong');
+    const m = run("pcEarMerge({ kind: 'akor', arp: true, best: { mudah: 6 }, st: { maj: [10, 8], min: [4, 1] }, conf: { 'maj>min': 2 } }, { best: { mudah: 9, sulit: 3 }, st: { maj: [7, 7], min: [6, 5], dom7: [5, 2] }, conf: { 'maj>min': 1, 'min>maj': 4 } })");
+    ok(m.best.mudah === 9 && m.best.sulit === 3, 'gabung: rekor memakai yang terbesar');
+    ok(m.st.maj.join() === '10,8' && m.st.min.join() === '6,5' && m.st.dom7.join() === '5,2', 'gabung: hitungan per jawaban memakai sisi yang soalnya lebih banyak');
+    ok(m.conf['maj>min'] === 2 && m.conf['min>maj'] === 4, 'gabung: tebakan tertukar memakai yang terbesar');
+    ok(m.kind === 'akor' && m.arp === true, 'gabung: pilihan tampilan lokal tidak ditimpa');
+    ok(JSON.stringify(run("(m => pcEarMerge(m, m))(pcEarMerge({ best: { a: 2 }, st: { x: [3, 1] } }, { st: { x: [5, 2] } }))")) === JSON.stringify(run("pcEarMerge({ best: { a: 2 }, st: { x: [3, 1] } }, { st: { x: [5, 2] } })")), 'gabung: idempoten (disinkron berulang tidak menggandakan angka)');
+    // earSaveData memicu sinkron
+    const before = synced; run("earSaveData({ best: { mudah: 1 } })"); ok(synced === before + 1, 'menyimpan statistik menjadwalkan sinkron');
+}
+
 // 11. data rusak tidak membuat crash
 store.pc_ear = '[1,2]'; ok(run('typeof earData()') === 'object' && !Array.isArray(run('earData()')), 'data pc_ear rusak diabaikan');
 
 // 12. lencana dan penghapusan data terpasang
 const ex = fs.readFileSync(path.join(ROOT, 'js', 'extras.js'), 'utf8'), sy = fs.readFileSync(path.join(ROOT, 'js', 'sync.js'), 'utf8');
 ok(/\['ear', '👂'/.test(ex), 'lencana "Telinga tajam" terdaftar di extras.js');
-ok(/\['ear2', '🎼'/.test(ex), 'lencana "Telinga musikal" terdaftar di extras.js');
+ok(/\['ear2', '🎼'/.test(ex) && /namanada\|akorkey/.test(ex), 'lencana "Telinga musikal" terdaftar di extras.js dan mencakup nama nada/akor');
 ok(sy.includes("'pc_ear'"), 'pc_ear ikut terhapus saat keluar & hapus data perangkat');
+ok(/pcEarClean\(lsGet\('pc_ear'/.test(sy) && /pcEarMerge\(lsGet\('pc_ear'/.test(sy), 'sync.js mengirim dan menggabung statistik telinga');
 console.log(fails ? `\n${fails} tes gagal` : '\nSemua tes Latih Telinga lulus'); process.exit(fails ? 1 : 0);

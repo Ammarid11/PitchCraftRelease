@@ -1,13 +1,13 @@
 /* Pitchcraft — Menu tab, tip singkat tiap tab, dan panel Bantuan (cara pakai). */
 
-const APP_VER = 'v23';   // samakan dengan VERSI di sw.js; tampil di panel Bantuan untuk memastikan versi yang berjalan
+const APP_VER = 'v29';   // samakan dengan VERSI di sw.js; tampil di panel Bantuan untuk memastikan versi yang berjalan
 
 // [id tab, ikon, nama, tip satu kalimat, cara pakai]
 const GUIDE = [
     ['deteksi', '🎸', 'Deteksi', 'Cari tahu nada atau akor yang kamu mainkan.', 'Petik SATU senar lalu tekan “Mulai Mendengarkan”: muncul nama nada dan seberapa pas. Atau tekan “Mode Strum” dan genjreng semua senar sekali: app menebak akornya dan menunjukkan posisi jari. Tuning standar memberi hasil terbaik.'],
     ['tuning', '🎚', 'Tuner', 'Menyetel gitar senar per senar.', 'Pilih tuning, tekan Mulai, lalu petik satu senar. Teks di bawah meter menunjukkan pasak dikencangkan atau dikendurkan. Ketuk nama senar untuk mendengar nada acuannya. Kartu Cari Kunci Suaramu di bawahnya mengukur nada terendah dan tertinggimu, lalu menyarankan kunci dan capo.'],
     ['kamus', '📚', 'Kamus', 'Semua akor untuk tiap nada dasar.', 'Pilih nada dasar atau ketik nama akor (mis. F#m7). Ketuk gambar untuk memilih akor, 🔊 untuk mendengarnya, ➕ Progresi untuk menambahkannya ke urutan akor.'],
-    ['latih', '🏋', 'Latih', 'Latihan pindah akor dan kuis, dicek lewat mikrofon.', 'Pilih mode, tingkat, dan durasi, lalu Mulai. Genjreng akor yang diminta. Streak harian dan lencana tercatat di sini. Kartu Latih Telinga di bawahnya melatih telinga: pilih jenis latihan (akor, interval, urutan akor, arah melodi, atau nada), app membunyikannya, kamu menebak (tanpa mikrofon).'],
+    ['latih', '🏋', 'Latih', 'Latihan pindah akor dan kuis, dicek lewat mikrofon.', 'Pilih mode, tingkat, dan durasi, lalu Mulai. Genjreng akor yang diminta. Streak harian dan lencana tercatat di sini. Kartu Latih Telinga di bawahnya melatih telinga: pilih jenis latihan (akor, interval, urutan akor, arah melodi, derajat nada, nama nada, atau nama akor), app membunyikannya, kamu menebak (tanpa mikrofon).'],
     ['lagu', '🎵', 'Lagu', 'Menulis lagu: bagian, akor, dan lirik.', 'Tulis lirik dengan akor di kurung siku, mis. [Am]kata, atau 📋 tempel teks dari situs akor. 🎤 Mode Main menampilkan lirik besar untuk dipakai saat bermain.'],
     ['progresi', '📋', 'Progresi', 'Susun urutan akor dan putar dengan metronom.', 'Tambah akor, atur BPM dan pola strum, lalu ▶ Putar. Kartu Pindah Akor menunjukkan jari mana yang tetap dan berpindah saat ganti akor. Akor yang kamu simpan juga ada di tab ini.']
 ];

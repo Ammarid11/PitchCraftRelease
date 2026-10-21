@@ -1,5 +1,5 @@
 /* Pitchcraft — Akun & sinkron (Supabase). Offline-first: localStorage tetap sumber utama, server hanya salinan.
- * Yang dikirim: sesi latihan, lencana, lagu aktif, pengaturan + progresi. Audio mikrofon TIDAK pernah dikirim.
+ * Yang dikirim: sesi latihan, lencana, lagu aktif, pengaturan + progresi, statistik Latih Telinga (angka saja). Audio mikrofon TIDAK pernah dikirim.
  * Isi js/supabase-config.js agar aktif; tanpa itu app berjalan seperti biasa tanpa login. */
 
 const PCS = window.PC_SUPABASE || {};
@@ -12,7 +12,11 @@ const knownBadges = () => new Set((typeof BADGES !== 'undefined' ? BADGES : []).
 
 /* ---------- Data lokal yang disinkronkan ---------- */
 const songHasContent = () => !!(song.name || song.sections.some(s => s.lyrics || s.chords.length));
-function settingsData() { const d = collectSettings(); delete d.song; return d; }   // lagu di baris terpisah
+function settingsData() {   // lagu di baris terpisah; statistik Latih Telinga ikut di sini (angka saja, hanya bila sudah ada)
+    const d = collectSettings(); delete d.song;
+    const e = pcEarClean(lsGet('pc_ear', {})); if (Object.keys(e).length) d.ear = e;
+    return d;
+}
 const docLocal = kind => kind === 'song' ? cleanSong(song) : settingsData();
 
 function applyRemoteDoc(kind, data) {
@@ -21,7 +25,9 @@ function applyRemoteDoc(kind, data) {
         song = cleanSong(data); if (!song.sections.length) song.sections = [newSection()];
         renderSong(); return;
     }
-    try { localStorage.setItem(PC_KEY, JSON.stringify(Object.assign({}, data, { song }))); } catch (e) { }
+    const rest = Object.assign({}, data), ear = rest.ear; delete rest.ear;   // statistik telinga digabung ke data lokal, bukan menimpa
+    try { localStorage.setItem(PC_KEY, JSON.stringify(Object.assign({}, rest, { song }))); } catch (e) { }
+    if (ear) { lsSet('pc_ear', pcEarMerge(lsGet('pc_ear', {}), ear)); if (typeof earRefreshStats === 'function') earRefreshStats(); }
     loadSettings();
     try { renderTuning(); renderKey(); renderPat(); renderProgression(); renderSong(); refreshChordViews(); } catch (e) { console.error(e); }
 }
@@ -310,6 +316,7 @@ function importProgress(d) {
     const known = knownBadges(), bg = new Set(lsGet('pc_badges', []));
     (Array.isArray(d.badges) ? d.badges : []).forEach(b => { if (known.has(b)) bg.add(b); }); lsSet('pc_badges', [...bg]);
     if (d.song && Array.isArray(d.song.sections) && confirm('Ganti lagu yang sedang aktif dengan lagu dari file?')) { song = cleanSong(d.song); if (!song.sections.length) song.sections = [newSection()]; renderSong(); }
+    const ie = d.settings && d.settings.ear; if (ie) { lsSet('pc_ear', pcEarMerge(lsGet('pc_ear', {}), ie)); if (typeof earRefreshStats === 'function') earRefreshStats(); }
     renderStreak(); pcToast(n + ' sesi diimpor'); pcSyncSoon();
 }
 function acctImport(inp) {

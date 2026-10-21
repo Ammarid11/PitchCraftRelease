@@ -1,6 +1,6 @@
 /* Pitchcraft — service worker: simpan semua file agar app jalan offline.
  * Naikkan nomor VERSI (dan APP_VER di js/tabs.js) setiap kali ada file yang berubah supaya cache lama dibuang. */
-const VERSI = 'pitchcraft-v23';
+const VERSI = 'pitchcraft-v29';
 const FILES = ['./', 'index.html', 'privacy.html', 'manifest.json', 'css/style.css',
     'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
     'js/boot.js', 'js/config.js', 'js/chords-db.js', 'js/pitch.js', 'js/gate.js', 'js/audio.js', 'js/tuner.js',

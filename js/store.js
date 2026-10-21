@@ -61,3 +61,41 @@ function hashStr(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h <
 
 // minta browser agar tidak menghapus data otomatis saat memori penuh
 try { if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { }); } catch (e) { }
+
+/* Statistik Latih Telinga ('pc_ear') yang ikut cadangan dan sinkron: hanya angka hasil (rekor, benar/salah per jawaban, tebakan tertukar).
+ * Pilihan tampilan (jenis, tingkat, acuan, petik) dan ringkasan ronde terakhir tetap per perangkat. Gabungan bersifat idempoten:
+ * rekor = terbesar, hitungan per jawaban = yang totalnya lebih banyak (bukan dijumlah, supaya tidak ganda saat disinkron berulang). */
+const PC_EAR_STAT = /^(st|conf)(_[a-z]+)?$/;
+function pcEarClean(d) {
+    const out = {}; if (!d || typeof d !== 'object' || Array.isArray(d)) return out;
+    const int = (v, max) => Math.min(max, Math.max(0, Math.floor(+v) || 0)), ok = k => typeof k === 'string' && k.length > 0 && k.length <= 40;
+    if (d.best && typeof d.best === 'object' && !Array.isArray(d.best)) {
+        const b = {}; Object.keys(d.best).slice(0, 60).forEach(k => { if (ok(k) && +d.best[k] > 0) b[k] = int(d.best[k], 100); });
+        if (Object.keys(b).length) out.best = b;
+    }
+    Object.keys(d).forEach(k => {
+        const m = PC_EAR_STAT.exec(k), v = d[k]; if (!m || !v || typeof v !== 'object' || Array.isArray(v)) return;
+        const o = {};
+        Object.keys(v).slice(0, 120).forEach(id => {
+            if (!ok(id) && !(m[1] === 'conf' && typeof id === 'string' && id.length <= 90)) return;
+            if (m[1] === 'st') { const a = v[id]; if (!Array.isArray(a)) return; const n = int(a[0], 1e6), g = Math.min(n, int(a[1], 1e6)); if (n > 0) o[id] = [n, g]; }
+            else { const n = int(v[id], 1e6); if (n > 0) o[id] = n; }
+        });
+        if (Object.keys(o).length) out[k] = o;
+    });
+    return out;
+}
+function pcEarMerge(local, remote) {
+    const a = pcEarClean(local), b = pcEarClean(remote), out = Object.assign({}, local && typeof local === 'object' && !Array.isArray(local) ? local : {});
+    const keys = new Set(Object.keys(a).concat(Object.keys(b)));
+    keys.forEach(k => {
+        const x = a[k] || {}, y = b[k] || {}, o = {};
+        new Set(Object.keys(x).concat(Object.keys(y))).forEach(id => {
+            const p = x[id], q = y[id];
+            if (k === 'best' || k.startsWith('conf')) o[id] = Math.max(p || 0, q || 0);
+            else o[id] = !p ? q : !q ? p : (q[0] > p[0] || (q[0] === p[0] && q[1] > p[1])) ? q : p;
+        });
+        out[k] = o;
+    });
+    return out;
+}

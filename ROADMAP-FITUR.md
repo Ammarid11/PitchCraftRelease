@@ -128,7 +128,7 @@ Kartu **Pindah Akor** di tab Progresi membandingkan dua akor (Dari / Ke) dan men
 - Dialog pratinjau dulu, lalu **Bagikan** (Web Share API dengan berkas gambar) atau **Unduh PNG** sebagai cadangan.
 - Alamat situs ikut tercetak di kaki kartu bila app dibuka dari domain sungguhan (bukan localhost).
 
-**Batasan:** huruf Google Fonts tidak ikut di-cache, jadi saat offline kartu memakai font sistem. Emoji bergantung pada font perangkat. Kartu skor memakai riwayat `pc_hist`, sehingga ronde Latih Telinga tidak muncul di sana.
+**Batasan:** huruf Google Fonts tidak ikut di-cache, jadi saat offline kartu memakai font sistem. Emoji bergantung pada font perangkat. Kartu skor latihan mikrofon memakai riwayat `pc_hist`; ronde Latih Telinga punya kartu sendiri (tombol di layar hasil ronde).
 
 ### 9. PWA
 `manifest.json`, `sw.js`, dan `icons/` (192, 512, maskable). Bisa dipasang ke layar utama dan jalan offline. Tombol **⬇ Pasang** muncul bila browser mengizinkan.
@@ -151,7 +151,7 @@ Tombol **🎨 Tampilan** di bilah atas membuka dialog dengan dua pengaturan, dis
 Kartu **Latih Telinga** di tab Latih (di bawah Latihan & Kuis). App membunyikan sesuatu, kamu menebaknya. **Tanpa mikrofon**, jadi bisa dilatih di mana saja, sebaiknya dengan headset.
 
 - **Satu ronde = 10 soal.** Nada dasar acak (tidak pernah sama dengan soal sebelumnya) dan jawaban seimbang: tiap pilihan muncul hampir sama banyak.
-- **Lima jenis latihan** (menu *Latihan*), masing-masing dengan tiga tingkat:
+- **Tujuh jenis latihan** (menu *Latihan*), masing-masing dengan tiga tingkat (Nama nada dan Nama akor punya tingkat ke-4, **Ahli**, tanpa acuan):
 
   | Jenis | Yang didengar | Yang ditebak | Mudah / Sedang / Sulit |
   |-------|---------------|--------------|------------------------|
@@ -159,24 +159,30 @@ Kartu **Latih Telinga** di tab Latih (di bawah Latihan & Kuis). App membunyikan 
   | Interval | dua nada berurutan (naik) | jaraknya: m2 … P8 | m3, M3, P5, P8 / 7 interval / 12 interval |
   | Urutan akor | empat akor di kunci acak | polanya dengan angka romawi (I–V–vi–IV, I–IV–V–I, vi–IV–I–V, I–vi–IV–V, I–V–vi–iii, i–VI–III–VII, i–VII–VI–V) | 2 / 4 / 7 pola |
   | Arah melodi | lima nada dari tangga nada mayor | naik, turun, naik lalu turun, turun lalu naik, zigzag, tetap | 2 / 4 / 6 kontur |
-  | Nada | **Mudah:** dua nada. **Sedang/Sulit:** nada acuan (Do) lalu satu nada | mana yang lebih tinggi / derajatnya (Do, Re, Mi, …) | 2 pilihan / Do-Mi-Sol-Do' / Do–Si |
+  | Nada (derajat) | **Mudah:** dua nada. **Sedang/Sulit:** nada acuan (Do) lalu satu nada | mana yang lebih tinggi / derajatnya (Do, Re, Mi, …) | 2 pilihan / Do-Mi-Sol-Do' / Do–Si |
+  | Nama nada | nada acuan lalu satu nada target; pilihan **Acuan**: *Otomatis* (Mudah/Sedang ikut kunci panel 🎼, Sulit bervariasi), *Ikut kunci*, *Bervariasi*, atau *C tetap* | namanya (C, C#, D, …) | Mudah/Sedang ikut kunci: 4 nada (tonika, terts, kuint, sekt) / 7 nada kunci; selain itu 4 / 7 / 12 nada; Sulit 12 nada; **Ahli:** 12 nada tanpa acuan (telinga mutlak) |
+  | Nama akor | satu akor, diawali akor acuan C mayor | namanya (C, Dm, G, Bdim, …) | acuan C: 4 akor / 7 akor diatonis / 12 akor (+ D, E, A, Bb, Fm di luar tangga nada); **Ahli:** 10 akor tanpa acuan |
 
+- **Acuan Nama nada:** nama nada acuan selalu tertulis di layar. Bila ikut kunci, acuan = tonika kunci yang sudah *diterapkan* di panel 🎼 dan pilihan jawaban Mudah/Sedang hanya nada dalam kunci itu (mayor atau minor alami); umpan balik menyebut derajatnya. Capo tidak berpengaruh (yang dipakai nama nada yang terdengar). Pilihan tersimpan di `pc_ear.ref`. Nama akor masih memakai acuan C mayor tetap.
+- **Cara latihan:** tiap jenis punya panduan langkah demi langkah di layar awal (`EAR_GUIDE` di `ear-training.js`). Di tiap soal tampil baris petunjuk tugas, nama acuan bila ada (nada atau akor acuan, atau "acuan Do"), dan panel "Cara latihan" yang bisa dibuka.
 - **Petik satu-satu** (khusus jenis akor): membunyikan akor senar demi senar. Pilihan ini disembunyikan untuk jenis lain.
 - **Umpan balik:** setelah menjawab, app menyebut jawaban yang benar beserta penjelasannya (nada pembentuk, jarak semitone, akor-akor pola, atau nada-nada melodi) dan ciri bunyinya. **Ketuk pilihan mana pun untuk membandingkan bunyinya.**
 - **Hasil ronde:** skor, akurasi, rincian per jawaban, dan tanda **Rekor baru** per jenis dan tingkat. Di bawah kartu tampil rekor, jawaban yang paling sulit dibedakan (minimal 5 soal), dan tebakan yang paling sering tertukar.
-- **Terhubung ke sistem yang ada:** tiap ronde dicatat sebagai sesi ber-ID bermode `ear` (level `interval-mudah`, `nada-sulit`, dan seterusnya; jenis akor tetap memakai `mudah`/`sedang`/`sulit`), jadi ikut **streak**, target harian, total latihan, dan sinkron akun. Lencana **👂 Telinga tajam** (semua jenis) dan **🎼 Telinga musikal** (jenis lanjutan). Nilai akor/menit sengaja 0 supaya tidak mengisi lencana kecepatan.
+- **Ulasan akhir ronde:** daftar soal yang salah, tiap soal dengan tombol 🔊 *Tebakanmu* dan 🔊 *Jawaban benar* untuk membandingkan bunyinya. **🖼 Bagikan hasil ronde** membuat kartu gambar (`scEar` di `share.js`).
+- **Aksesibilitas:** hasil tiap jawaban dan hasil ronde diumumkan ke pembaca layar (`#earLive`); pilihan benar/salah diberi ✓/✗ dan label, titik progres salah bergaris (bukan hanya warna).
+- **Terhubung ke sistem yang ada:** tiap ronde dicatat sebagai sesi ber-ID bermode `ear` (level `interval-mudah`, `nada-sulit`, `namanada-ahli`, dan seterusnya; jenis akor tetap memakai `mudah`/`sedang`/`sulit`), jadi ikut **streak**, target harian, total latihan, dan sinkron akun. Lencana **👂 Telinga tajam** (semua jenis) dan **🎼 Telinga musikal** (jenis lanjutan). Nilai akor/menit sengaja 0 supaya tidak mengisi lencana kecepatan.
 - Memakai mesin suara Karplus-Strong yang sudah ada (`pluckNote`), selalu tuning standar tanpa capo.
-- **Data:** statistik di `pc_ear` (jenis dan tingkat pilihan, rekor, jumlah benar/salah per jawaban). Data jenis akor memakai kunci lama (`st`, `conf`, `best.<tingkat>`) sehingga data lama tetap terbaca; jenis lain memakai `st_<jenis>`, `conf_<jenis>`, dan `best["<jenis>.<tingkat>"]`. Hanya di perangkat ini, tidak ikut sinkron, dan terhapus saat "Keluar dan hapus data di perangkat ini". Sesinya sendiri ikut sinkron seperti sesi lain.
+- **Data:** statistik di `pc_ear` (jenis dan tingkat pilihan, rekor, jumlah benar/salah per jawaban). Data jenis akor memakai kunci lama (`st`, `conf`, `best.<tingkat>`) sehingga data lama tetap terbaca; jenis lain memakai `st_<jenis>`, `conf_<jenis>`, dan `best["<jenis>.<tingkat>"]`. Angka statistik (rekor, benar/salah per jawaban, tebakan tertukar) ikut **cadangan `.json` dan sinkron akun** (digabung, tidak menimpa; lihat `pcEarMerge` di `store.js`); pilihan tampilan dan ringkasan ronde terakhir tetap di perangkat. Semuanya terhapus saat "Keluar dan hapus data di perangkat ini". Sesinya sendiri ikut sinkron seperti sesi lain.
 
-**Batasan:** nada pada jenis Nada selalu relatif terhadap acuan (belum melatih nada mutlak). Interval hanya naik dan dibunyikan berurutan, belum bersamaan atau turun. Urutan akor memakai akor triad dengan bentuk pertama dari kamus, tanpa variasi irama. Melodi memakai tangga nada mayor; belum ada tangga minor atau lompatan besar. Waktu diam dihitung maksimal 60 detik per soal. Tidak bisa dijalankan bersamaan dengan latihan bermikrofon (Mode Strum akan mendengar suara speaker).
+**Batasan:** jenis Nada (derajat) selalu memakai acuan Do; nada mutlak hanya dilatih di tingkat Ahli pada Nama nada (register C3–B4, bunyi senar gitar dari mesin suara app, jadi bisa berbeda dari gitar atau piano aslimu). Nama akor memakai satu bentuk jari tetap per akor (bentuk pertama di kamus), jadi di tingkat Ahli sebagian petunjuknya adalah warna bunyi bentuk itu. Interval hanya naik dan dibunyikan berurutan, belum bersamaan atau turun. Urutan akor memakai akor triad dengan bentuk pertama dari kamus, tanpa variasi irama. Melodi memakai tangga nada mayor; belum ada tangga minor atau lompatan besar. Waktu diam dihitung maksimal 60 detik per soal. Tidak bisa dijalankan bersamaan dengan latihan bermikrofon (Mode Strum akan mendengar suara speaker).
 
-**Tes:** `tests/ear-training.test.js`.
+**Tes:** `tests/ear-training.test.js` (ulasan, pengumuman, penggabungan statistik) dan `tests/sync.test.js` (statistik antar perangkat).
 
 ---
 
 ## Ide berikutnya
 
-- **Latih Telinga berikutnya:** interval turun dan bersamaan, tangga minor, tebak nada mutlak (tanpa acuan), dan urutan akor dengan akor ke-7.
+- **Latih Telinga berikutnya:** interval turun dan bersamaan, tangga minor, nama nada dengan oktaf acak yang lebih lebar, dan urutan akor dengan akor ke-7.
 - **Mode duet/jam:** app mengiringi dengan suara Karplus-Strong yang sudah ada, kamu main melodi.
 - **Pustaka lagu komunitas:** butuh server, jadi menyusul setelah backend ada.
 

@@ -25,6 +25,7 @@ Tanpa langkah ini app tetap jalan penuh (offline, tanpa login). Langkah di bawah
 - **Sesi:** log hanya-bertambah ber-ID unik; total per hari dihitung ulang dari sesi, jadi 60 dtk (HP) + 120 dtk (laptop) = 180 dtk.
 - **Lencana:** gabungan, tidak dicabut.
 - **Catatan akor salah:** seperti sesi (hanya bertambah, ber-ID); perangkat menyimpan 300 terbaru.
+- **Statistik Latih Telinga:** angka saja (rekor, benar/salah per jawaban, tebakan tertukar) dikirim di dalam baris `settings` (kunci `ear`, tanpa perubahan skema). Digabung, bukan ditimpa: rekor = terbesar, hitungan per jawaban = sisi yang soalnya lebih banyak, sehingga aman diulang. Statistik dari perangkat lama yang baru masuk akun terkirim pada perubahan statistik berikutnya.
 - **Lagu aktif & pengaturan/progresi:** waktu server (`updated_at`, diisi trigger) menentukan versi terbaru. Jika dua perangkat sama-sama mengubah dan isinya beda, versi server dipakai dan versi perangkat ini **disimpan** untuk dipulihkan lewat 👤 Akun.
 - Audio mikrofon tidak pernah dikirim.
 

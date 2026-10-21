@@ -1533,3 +1533,24 @@ body::before { content: ""; position: fixed; inset: -25%; z-index: -1; pointer-e
 
 /* Latih Telinga: opsi yang disembunyikan untuk jenis latihan tertentu */
 .picker-row label[hidden] { display: none; }
+
+/* Latih Telinga: cara latihan dan petunjuk soal */
+.ear-how { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--surface-border); font-size: .82rem; color: var(--text-muted); }
+.ear-how > strong, .ear-how summary { color: var(--text-main); font-weight: 700; font-size: .85rem; cursor: pointer; }
+.ear-how.open { margin: 10px 0 4px; }
+.ear-steps { margin: 8px 0 0 1.2rem; display: grid; gap: 6px; line-height: 1.5; }
+.ear-tip { margin-top: 8px; color: #fcd34d; }
+.ear-task { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(139,92,246,.12); border: 1px solid rgba(139,92,246,.4); font-size: .9rem; line-height: 1.5; color: var(--text-main); }
+.ear-ref { color: #ddd6fe; font-size: .85rem; }
+[data-theme="light"] .ear-tip { color: #92400e; }
+[data-theme="light"] .ear-ref { color: #5b21b6; }
+
+/* Latih Telinga: aksesibilitas (pengumuman pembaca layar, penanda bukan hanya warna) dan ulasan akhir ronde */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.ear-dots i.bad { background: repeating-linear-gradient(135deg, var(--danger) 0 3px, rgba(0,0,0,.45) 3px 6px); }
+.ear-dots i.cur { box-shadow: 0 0 0 2px var(--primary); background: transparent; }
+.ear-opt.right, .ear-opt.wrong { font-weight: 700; }
+.ear-opt.wrong { border-style: dashed; }
+.ear-review { margin-top: 12px; }
+.ear-rv { margin-top: 8px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--surface-border); font-size: .84rem; line-height: 1.5; }
+.ear-rv .picker-row { margin-top: 6px; }
